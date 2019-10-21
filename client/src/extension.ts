@@ -6,6 +6,7 @@
 import * as path from 'path';
 import { workspace, ExtensionContext} from 'vscode';
 import * as vscode from 'vscode';
+import { log, LOGGER_MODE, logDebug, logInfo, userLog } from './logger';
 
 import {
 	LanguageClient,
@@ -20,14 +21,6 @@ let client: LanguageClient;
 function p4ExtConfiguration(): P4ExtensionSettings{
 	let configuration_workspace = <P4ExtensionSettings>(<any>vscode.workspace.getConfiguration('p4Extension'));
 	return configuration_workspace;
-}
-
-function loglog(msg:string){
-	// console.log(msg);
-}
-
-function userLog(msg:string){
-	vscode.window.showInformationMessage(msg);
 }
 
 export function activate(context: ExtensionContext) {
@@ -66,7 +59,7 @@ export function activate(context: ExtensionContext) {
 		
 	client.onReady().then(() => {
 		client.onNotification("custom/loadFiles", (files: Array<String>) => {
-			loglog("Ali loading files " + files);
+			log("Loading files..." + files, LOGGER_MODE.INFO);
 		});
 	});
 		
@@ -74,12 +67,12 @@ export function activate(context: ExtensionContext) {
 	client.start();
 	
 	context.subscriptions.push(vscode.commands.registerCommand('p4Extension.Login', () => {
-		loglog("Loging is initiated!");
+		log("Command called: LOGIN", LOGGER_MODE.INFO);
 		getUsernamePassword();
 	}));
 	
 	context.subscriptions.push(vscode.commands.registerCommand('p4Extension.Compile', () => {
-		loglog("Compile is initiated!");
+		log("Command called: COMPILE", LOGGER_MODE.INFO);
 		sendCompileRequest();
 	}));
 }
@@ -94,7 +87,8 @@ export function deactivate(): Thenable<void> | undefined {
 async function sendCompileRequest() {
 	let apiUrl:string = p4ExtConfiguration().compilerServerAddress + "/p4_compile";
 	
-	loglog("let's call the API: " + apiUrl);
+	logInfo("Sending API call for compile");
+	logDebug("API: " + apiUrl);
 	const request = require('request');
 	request.post({
 		url: apiUrl,
@@ -112,7 +106,7 @@ async function sendCompileRequest() {
 		try{
 			let new_body:any = JSON.parse(body.replace(/&quot;/g,'"'));
 			if (!err && response.statusCode === 200) {
-				loglog("API HTTP status: " + new_body.status);
+				logDebug("API HTTP status: " + new_body.status);
 				
 				if(new_body.status == "error" || new_body.status == "p4c_error"){
 					userLog("Compile Error!");
@@ -129,7 +123,7 @@ async function sendCompileRequest() {
 				userLog("Internal Server Error: " + err);
 			}
 		}catch(e){
-			loglog("Exception: " + e);
+			logDebug("Exception: " + e);
 		}
 	});
 }
@@ -153,7 +147,7 @@ async function getUsernamePassword() {
 		username = p4ExtConfiguration().usernamePassword.username;
 		password = p4ExtConfiguration().usernamePassword.password;
 	}
-	loglog("let's call the API: " + apiURL);
+	logDebug("API Call: " + apiURL);
 	const request = require('request');
 	request.post({
 		url: apiURL, 
@@ -181,7 +175,7 @@ async function getUsernamePassword() {
 						vscode.workspace.getConfiguration('p4Extension').update('userRememberToken', cookie, vscode.ConfigurationTarget.Workspace);
 						vscode.workspace.getConfiguration('p4Extension').update('userRememberToken', cookie, vscode.ConfigurationTarget.WorkspaceFolder);
 						
-						loglog("cookie got after LOGIN: " + cookie);
+						logDebug("Cookie got: " + cookie);
 						userLog("Login Successfull!");
 					}
 				}
@@ -190,7 +184,6 @@ async function getUsernamePassword() {
 			}
 		}
 		else {
-			loglog("====");
 			userLog("Login Failed!");
 		}
 	});

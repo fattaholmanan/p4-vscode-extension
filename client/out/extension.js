@@ -15,17 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const vscode_1 = require("vscode");
 const vscode = require("vscode");
+const logger_1 = require("./logger");
 const vscode_languageclient_1 = require("vscode-languageclient");
 let client;
 function p4ExtConfiguration() {
     let configuration_workspace = vscode.workspace.getConfiguration('p4Extension');
     return configuration_workspace;
-}
-function loglog(msg) {
-    // console.log(msg);
-}
-function userLog(msg) {
-    vscode.window.showInformationMessage(msg);
 }
 function activate(context) {
     // The server is implemented in node
@@ -56,17 +51,17 @@ function activate(context) {
     client = new vscode_languageclient_1.LanguageClient('p4Extension', 'P4 vscode Extension', serverOptions, clientOptions);
     client.onReady().then(() => {
         client.onNotification("custom/loadFiles", (files) => {
-            loglog("Ali loading files " + files);
+            logger_1.log("Loading files..." + files, logger_1.LOGGER_MODE.INFO);
         });
     });
     // Start the client. This will also launch the server
     client.start();
     context.subscriptions.push(vscode.commands.registerCommand('p4Extension.Login', () => {
-        loglog("Loging is initiated!");
+        logger_1.log("Command called: LOGIN", logger_1.LOGGER_MODE.INFO);
         getUsernamePassword();
     }));
     context.subscriptions.push(vscode.commands.registerCommand('p4Extension.Compile', () => {
-        loglog("Compile is initiated!");
+        logger_1.log("Command called: COMPILE", logger_1.LOGGER_MODE.INFO);
         sendCompileRequest();
     }));
 }
@@ -81,7 +76,8 @@ exports.deactivate = deactivate;
 function sendCompileRequest() {
     return __awaiter(this, void 0, void 0, function* () {
         let apiUrl = p4ExtConfiguration().compilerServerAddress + "/p4_compile";
-        loglog("let's call the API: " + apiUrl);
+        logger_1.logInfo("Sending API call for compile");
+        logger_1.logDebug("API: " + apiUrl);
         const request = require('request');
         request.post({
             url: apiUrl,
@@ -98,9 +94,9 @@ function sendCompileRequest() {
             try {
                 let new_body = JSON.parse(body.replace(/&quot;/g, '"'));
                 if (!err && response.statusCode === 200) {
-                    loglog("API HTTP status: " + new_body.status);
+                    logger_1.logDebug("API HTTP status: " + new_body.status);
                     if (new_body.status == "error" || new_body.status == "p4c_error") {
-                        userLog("Compile Error!");
+                        logger_1.userLog("Compile Error!");
                     }
                     if (new_body.status == "ok") {
                         let compiledFile = JSON.stringify(new_body.output);
@@ -111,11 +107,11 @@ function sendCompileRequest() {
                     }
                 }
                 else {
-                    userLog("Internal Server Error: " + err);
+                    logger_1.userLog("Internal Server Error: " + err);
                 }
             }
             catch (e) {
-                loglog("Exception: " + e);
+                logger_1.logDebug("Exception: " + e);
             }
         });
     });
@@ -140,7 +136,7 @@ function getUsernamePassword() {
             username = p4ExtConfiguration().usernamePassword.username;
             password = p4ExtConfiguration().usernamePassword.password;
         }
-        loglog("let's call the API: " + apiURL);
+        logger_1.logDebug("API Call: " + apiURL);
         const request = require('request');
         request.post({
             url: apiURL,
@@ -164,18 +160,17 @@ function getUsernamePassword() {
                             vscode.workspace.getConfiguration('p4Extension').update('userRememberToken', cookie, vscode.ConfigurationTarget.Global);
                             vscode.workspace.getConfiguration('p4Extension').update('userRememberToken', cookie, vscode.ConfigurationTarget.Workspace);
                             vscode.workspace.getConfiguration('p4Extension').update('userRememberToken', cookie, vscode.ConfigurationTarget.WorkspaceFolder);
-                            loglog("cookie got after LOGIN: " + cookie);
-                            userLog("Login Successfull!");
+                            logger_1.logDebug("Cookie got: " + cookie);
+                            logger_1.userLog("Login Successfull!");
                         }
                     }
                 }
                 else {
-                    userLog("Login Failed!");
+                    logger_1.userLog("Login Failed!");
                 }
             }
             else {
-                loglog("====");
-                userLog("Login Failed!");
+                logger_1.userLog("Login Failed!");
             }
         });
     });
