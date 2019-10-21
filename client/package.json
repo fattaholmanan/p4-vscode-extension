@@ -1,0 +1,27 @@
+{
+	"name": "p4_plugin_client",
+	"description": "Client part of a P4 plugin",
+	"author": "Ali",
+	"license": "",
+	"version": "0.0.1",
+	"publisher": "USI",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/usi-systems/p4-ide"
+	},
+	"engines": {
+		"vscode": "^1.23.0"
+	},
+	"scripts": {
+		"update-vscode": "vscode-install",
+		"postinstall": "vscode-install"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^4.1.4"
+	},
+	"devDependencies": {
+		"vscode": "^1.1.21",
+		"request": "2.80.0",
+		"unescape": "1.0.1"
+	}
+}

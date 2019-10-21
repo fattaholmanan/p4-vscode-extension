@@ -1,0 +1,4 @@
+export enum P4KeywordType {
+	HEADER_TYPE,
+	HEADER_INSTANTIATION
+}

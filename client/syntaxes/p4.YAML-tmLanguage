@@ -1,0 +1,151 @@
+# [PackageDev] target_format: plist, ext: tmLanguage
+# Ref to
+# P4 spec. http://p4.org/wp-content/uploads/2016/03/p4_v1.1.pdf
+# https://manual.macromates.com/en/language_grammars#naming_conventions
+# http://manual.macromates.com/en/regular_expressions
+
+---
+name: P4
+scopeName: source.p4
+fileTypes: [p4, P4]
+uuid: 4e5d04f4-6799-4236-b26e-9ee154e52880
+
+#foldingStartMarker: '\{\s*$';
+#foldingStopMarker : '^\s*\}';
+
+
+patterns:
+
+# cooment
+- comment: C-style Block Comment
+  name: comment.block.p4
+  begin: (/\*)
+  end: (\*/)
+
+- comment: C++ style Line Comment
+  name: comment.line.double-slash.p4
+  begin: (//)
+  end: (?:\n)
+
+- comment: xxx
+  name: keyword.control.import.define.p4 #entity.name.function.preprocessor.p4
+  match: ^\s*\#\s*(include)\b
+
+- name: keyword.control.import.define.p4
+  match: ^\s*\#\s*(define)\b
+
+- name: string.quoted.p4
+  match: \"([^\"]+)\"
+
+# Constants
+- comment: constant 
+  name: constant.language
+  match: \b(true|false)\b
+
+- comment: decimal number
+  #name: constant.numeric
+  match:  (?:\W|^)(\d+)(?:\W)
+  captures:
+    '1': {name: constant.numeric.p4}
+
+- comment: hexadecimal number
+  match:  (?:\W|^)(0(x|X)\h+)(?:\W)
+  captures:
+    '1': {name: constant.numeric.p4}
+  
+- comment: binary
+  match:  (?:\W|^)(0(b|B)[01]+)(?:\W)
+  captures:
+    '1': {name: constant.numeric.p4}
+
+# Keyworks
+- comment: control flow
+  name: keyword.control
+  match: \b(if|else|return|hit|miss|default)\b
+
+- comment: operator
+  name: keyword.operator
+  match: \b(and|or|not)\b
+
+- comment: xxx
+  name: keyword.other
+  match: \b(input|algorithm|output_width|width|instance_count)\b
+
+- comment: xx
+  name: keyword.other
+  match: \b(fields|reads|actions)\b
+
+- comment: other
+  match: \b(header_type|field_list|field_list_calculation|field_list|register|meter|counter|calculated_field)\s+([_a-zA-Z]\w*)\s*(?:\{|\n)
+  captures:  
+    '1': {name: entity.name.type.p4}
+    '2': {name: entity.name.section.p4}
+
+- comment: 
+  match: ^\s*(action)\s+(\w+)\s*(?:\()
+  captures:
+    '1': {name: entity.name.type.p4}
+    '2': {name: entity.name.function.p4}
+    
+- comment: other
+  match: ^\s*(header|metadata)\s+(\w+)\s+(\w+)\s*;
+  captures:  
+    '1': {name: entity.name.type.p4}
+    '2': {name: entity.name.section.p4}
+    '3': {name: entity.name.tag.p4}
+
+# types
+- comment: xxx
+  name: storage.type
+  match: \b(bit|varbit|int|bytes)\b
+
+# types
+- comment: xxx
+  name: storage.type
+  match: \b(paser|control|table|action_profile|counter)\s
+
+- comment: xxx
+  name: storage.modifier 
+  match: \b(direct|static)\b
+
+
+- comment: xxx
+  name: variable.language
+  match: \b(current|next|last|length|payloads)\b
+
+- comment: xxx
+  name: support.constant 
+  match: \b(standard_metadata)\b
+
+- comment: xxx
+  name: support.class
+  match: \b(ingress|egress)\b
+
+- comment: table field match type
+  name: entity.name.type
+  match: \b(exact|ternary|lpm|range|valid|mask)\b
+
+
+# Standard primitives provied by P4
+- comment: operate a header or metadata field
+  name: support.function
+  match: \b(set_metadata|modify_field|modify_field_with_hash_based_offset)\s*(?:\()
+  
+- comment: operate a header
+  name: support.function
+  match: \b((add|copy|remove)_header|push|pop)\s*(?:\()
+
+- comment: operate a packet clone, resubmit, drop, recirculate
+  name: support.function
+  match: \b(clone_(in|e)gress_pkt_to_(in|e)gress|truncate|drop|no_op|resubmit|generate_digest|recirculate)\s*(?:\()
+  #captures:
+  #  '1': {name: support.function}
+
+- comment: operate a stateful memory
+  name: support.function
+  match: \b(execute_meter|count|register_(write|read))\s*(?:\()
+  
+- comment: builtin functions
+  name: support.function
+  match: \b(apply|valid|select|current|extract)\s(?:\()
+
