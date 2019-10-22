@@ -31,8 +31,24 @@ let MyP4Listner = function() : void {
 MyP4Listner.prototype = Object.create(P4Listener.prototype);
 MyP4Listner.prototype.constructor = MyP4Listner;
 
+
+////symbol table -> installed package from https://www.npmjs.com/package/symbol-table (npm install symbol-table)
+var SymbolTable = require("symbol-table");
+
+//pointers array (no pointers in Javascript but this will act like it)
+var symPtrs = [];
+
+//pushing global scope to the top of the pointer array
+symPtrs.push(SymbolTable());
+
+
+
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
-	// loglog("Const Dec: " + ctx.getText());
+
+};
+
+MyP4Listner.prototype.enterControlDeclaration = function(ctx){
+
 };
 
 MyP4Listner.prototype.enterAssignmentOrMethodCallStatement = function(ctx) {
