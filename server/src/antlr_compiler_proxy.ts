@@ -41,14 +41,42 @@ var symPtrs = [];
 //pushing global scope to the top of the pointer array
 symPtrs.push(SymbolTable());
 
+var top;
 
+var pScope;	//pushedScope
+
+var sScope;	//savedScope
+var sScopeArr = []; //savedScopeArray
+
+
+//for every identifier i should define the type. Store the context and the type
 
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
+	logloglog("CONSTANT");
 
+	//create a new symbol table for each one
+
+	top = symPtrs[symPtrs.length-1];	//setting "top" to the top of the stack
+	pScope = top.push();	//creating a new scope on top of the current top
+	pScope.set(ctx.identifier, ctx);	//setting the name as the identifier, and the information as the node in the tree
+	symPtrs.push(pScope);	//pushing the new scope onto the symPtrs array
+	
 };
 
-MyP4Listner.prototype.enterControlDeclaration = function(ctx){
+MyP4Listner.prototype.exitConstantDeclaration = function(ctx){
+	logloglog("Constant");
 
+	//on exit i should pop it off and then save it somewhere
+
+	top = symPtrs[symPtrs.length-1];	//setting "top" to the top of the stack
+	sScope = top.pop();	//pop the top of the stack
+	sScopeArr.push(sScope);	//save pushed scope in case we need it
+};
+
+
+
+MyP4Listner.prototype.enterTableDeclaration = function(ctx){
+	logloglog("TABLE");
 };
 
 MyP4Listner.prototype.enterAssignmentOrMethodCallStatement = function(ctx) {
