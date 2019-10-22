@@ -48,7 +48,15 @@ var pScope;	//pushedScope
 var sScope;	//savedScope
 var sScopeArr = []; //savedScopeArray
 
+/*
+	IMPORTANT NOTE: 
 
+	.push() with no arguments means pushing a new scope on to the symbol table. This is part of the installed package symbol-table
+	.push(arg1, arg2, ...) is a built in array function with Javascript. This is used to push onto the symPtrs array.
+
+	(to avoid confusion)
+
+*/
 //for every identifier i should define the type. Store the context and the type
 
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
