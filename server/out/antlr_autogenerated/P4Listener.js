@@ -1,4 +1,4 @@
-// Generated from /Users/ali/Desktop/p4-ide/antlr_compiler/grammars/P4.g4 by ANTLR 4.7.2
+// Generated from ./grammar/P4.g4 by ANTLR 4.7.2
 // jshint ignore: start
 var antlr4 = require('antlr4/index');
 
@@ -1106,6 +1106,15 @@ P4Listener.prototype.enterType_or_id = function(ctx) {
 
 // Exit a parse tree produced by P4Parser#type_or_id.
 P4Listener.prototype.exitType_or_id = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#parserStateCondition.
+P4Listener.prototype.enterParserStateCondition = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#parserStateCondition.
+P4Listener.prototype.exitParserStateCondition = function(ctx) {
 };
 
 
