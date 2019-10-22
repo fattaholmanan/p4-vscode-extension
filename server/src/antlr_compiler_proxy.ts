@@ -62,7 +62,7 @@ var sScopeArr = []; //savedScopeArray
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
 	logloglog("CONSTANT");
 
-	//create a new symbol table for each one
+	//create a new scope for each one
 
 	top = symPtrs[symPtrs.length-1];	//setting "top" to the top of the stack
 	pScope = top.push();	//creating a new scope on top of the current top
