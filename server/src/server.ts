@@ -27,7 +27,6 @@ export let connection = createConnection(ProposedFeatures.all);
 
 // create an object for the AST. Now it is very minimalist.
 export const p4Program = new P4Program();
-export const p4PlusProgram = new P4Program();
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only

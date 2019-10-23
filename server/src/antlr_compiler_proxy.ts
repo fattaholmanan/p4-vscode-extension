@@ -44,7 +44,11 @@ symPtrs.push(SymbolTable());
 
 
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
+	logloglog("enter constant: " + ctx.getText());
+};
 
+MyP4Listner.prototype.exitConstantDeclaration = function(ctx) {
+	logloglog("exit CONSTANT");
 };
 
 MyP4Listner.prototype.enterControlDeclaration = function(ctx){
