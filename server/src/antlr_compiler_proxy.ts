@@ -57,35 +57,68 @@ var sScopeArr = []; //savedScopeArray
 	(to avoid confusion)
 
 */
+
+function peekAndPush(stack, noder){
+
+	var peeker = stack[stack.length-1];	//setting peeker to the top of the stack
+	var pusher = peeker.push();	//creating a new scope on top of peeker
+	pusher.set(noder.identifier, noder); //setting the name as the identifier, and the info as node in the tree
+	stack.push(pusher);	//pushing the finished product at the top of the array
+
+	return stack;
+
+}
+
+function peekAndPop(stack, saver){
+	var peeker = stack[stack.length-1];
+	var popper = peeker.pop();
+	saver.add(popper);	//I am just saving this in a another array, but I need to figure out how to organize it
+
+	return stack;
+}
 //for every identifier i should define the type. Store the context and the type
 
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
-	logloglog("CONSTANT");
+	pScope.set(ctx.identifier, ctx);	//setting the name as the identifier, and the information as the node in the tree
+};
 
-	//create a new symbol table for each one
+MyP4Listner.prototype.exitConstantDeclaration = function(ctx){
+	//do nothing, all constants need to do is be added
+};
 
+MyP4Listner.prototype.enterControlDeclaration = function(ctx){
+	peekAndPush(symPtrs, ctx);
+};
+
+MyP4Listner.prototype.exitControlDeclaration = function(ctx){
+	peekAndPop(symPtrs, ctx);
+
+};
+
+MyP4Listner.prototype.enterTableDeclaration = function(ctx){
+
+	peekAndPush(symPtrs, ctx);
+
+	//saving this for testing purposes
+	/* 
 	top = symPtrs[symPtrs.length-1];	//setting "top" to the top of the stack
 	pScope = top.push();	//creating a new scope on top of the current top
 	pScope.set(ctx.identifier, ctx);	//setting the name as the identifier, and the information as the node in the tree
 	symPtrs.push(pScope);	//pushing the new scope onto the symPtrs array
-	
+	*/
 };
 
-MyP4Listner.prototype.exitConstantDeclaration = function(ctx){
-	logloglog("Constant");
+MyP4Listner.prototype.exitTableDeclaration = function(ctx){
 
-	//on exit i should pop it off and then save it somewhere
-
+	peekAndPop(symPtrs, ctx);
+	// saving this for testing purposes
+	/*
 	top = symPtrs[symPtrs.length-1];	//setting "top" to the top of the stack
 	sScope = top.pop();	//pop the top of the stack
 	sScopeArr.push(sScope);	//save pushed scope in case we need it
+	*/
 };
 
-
-
-MyP4Listner.prototype.enterTableDeclaration = function(ctx){
-	logloglog("TABLE");
-};
 
 MyP4Listner.prototype.enterAssignmentOrMethodCallStatement = function(ctx) {
 	// loglog("Assign: " + ctx.getText());
