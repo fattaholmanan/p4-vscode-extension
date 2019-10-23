@@ -86,6 +86,7 @@ MyP4Listner.prototype.exitConstantDeclaration = function(ctx){
 	//do nothing, all constants need to do is be added
 };
 
+<<<<<<< HEAD
 MyP4Listner.prototype.enterControlDeclaration = function(ctx){
 	peekAndPush(symPtrs, ctx);
 };
@@ -98,6 +99,9 @@ MyP4Listner.prototype.exitControlDeclaration = function(ctx){
 MyP4Listner.prototype.enterTableDeclaration = function(ctx){
 
 	peekAndPush(symPtrs, ctx);
+=======
+	//create a new scope for each one
+>>>>>>> 7bf7549e2e00c4d507339a01dc2f991b7b357bb7
 
 	//saving this for testing purposes
 	/* 
