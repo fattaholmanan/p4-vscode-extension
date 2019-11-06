@@ -51,4 +51,4 @@ import { EOF } from 'dns';
 	MyP4Listner.prototype = Object.create(P4Listener.prototype);
 	MyP4Listner.prototype.constructor = MyP4Listner;
 
-exports.SymbolTableCheck = MyP4Listner;
+export var SymbolTableCheck = MyP4Listner;

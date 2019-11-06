@@ -82,5 +82,6 @@ import { EOF } from 'dns';
 		logloglog("Assign: " + ctx.getText());
 	};
 
-	exports.SymbolTablePass = MyP4Listner;
+	export var SymbolTablePass = MyP4Listner;
+	
 
