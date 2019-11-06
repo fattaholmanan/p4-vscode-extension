@@ -19,21 +19,24 @@ let MyP4Listner = function () {
 MyP4Listner.prototype = Object.create(P4Listener_1.P4Listener.prototype);
 MyP4Listner.prototype.constructor = MyP4Listner;
 ////symbol table -> installed package from https://www.npmjs.com/package/symbol-table (npm install symbol-table)
-var SymbolTable = require("symbol-table");
+exports.SymbolTable = require("symbol-table/stack")();
 //pointers array (no pointers in Javascript but this will act like it)
-var symPtrs = [];
+// var symPtrs = [];
 //pushing global scope to the top of the pointer array
-symPtrs.push(SymbolTable());
+// symPtrs.push(SymbolTable());
 MyP4Listner.prototype.enterConstantDeclaration = function (ctx) {
-    utils_1.logloglog("enter constant: " + ctx.getText());
+    utils_1.logloglog("ENTER - Constant - " + ctx.name().getText());
+    exports.SymbolTable.set(ctx.name().getText(), { "ctx": ctx, "typeref": ctx.typeref().getText() });
 };
-MyP4Listner.prototype.exitConstantDeclaration = function (ctx) {
-    utils_1.logloglog("exit CONSTANT");
+MyP4Listner.prototype.enterParserDeclaration = function (ctx) {
+    let name = ctx.parserTypeDeclaration().name().getText();
+    let typeref = "parser";
+    utils_1.logloglog("ENTER - Parser - " + name);
+    exports.SymbolTable.set(name, { "ctx": ctx, "typeref": typeref });
+    exports.SymbolTable.push();
 };
-MyP4Listner.prototype.enterControlDeclaration = function (ctx) {
-};
-MyP4Listner.prototype.enterAssignmentOrMethodCallStatement = function (ctx) {
-    // loglog("Assign: " + ctx.getText());
+MyP4Listner.prototype.enterParserDeclaration = function (ctx) {
+    exports.SymbolTable.pop();
 };
 function sendToAntlrCompiler(textDocument) {
     utils_1.loglog("Running Antlr Compiler");

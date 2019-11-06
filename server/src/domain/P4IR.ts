@@ -4,6 +4,4 @@ export class P4IR{
 	constructor(){
 		this.symbolTable = require("symbol-table/stack")();
 	}
-
-	
 }
