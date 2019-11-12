@@ -21,38 +21,31 @@ import { ParseTreeWalker } from 'antlr4/tree';
 import { SIGUSR1 } from 'constants';
 import { EOF } from 'dns';
 
+
 	var MyP4Listner = function(table) : void {
 		P4Listener.call(this); // inherit default listener
 		P4Listener.symTableStack = table;
 		return this;
 	};
 
-	
-	function addSymbolTableEntry(stack, id, entry) {
-		logloglog("identifier: " + id);
-		logloglog("entry: " + entry);
-		logloglog("stack height: " + stack.height());
-		stack.set(id, entry); 
-	}
 
-	function peekAndPop(stack, saver){
-		var peeker = stack[stack.length-1];
-		var popper = peeker.pop();
-		saver.add(popper);	//I am just saving this in a another array, but I need to figure out how to organize it
-	
-		return stack;
-	}
 
 	// continue inheriting default listener
 	MyP4Listner.prototype = Object.create(P4Listener.prototype);
 	MyP4Listner.prototype.constructor = MyP4Listner;
-
 	
-	MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
-		var id = ctx.getChild(3).getText();
-		var entry = ctx;
-		addSymbolTableEntry(this.symTableStack, id, ctx);
-	};
+	function addSymbolTableEntry(stack, id, entry) {
+		logloglog("identifier: " + id);
+		logloglog("entry: " + entry.getText());
+		logloglog("stack height: " + stack.height());
+		stack.set(id, entry); 
+	}
+
+	// MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
+	// 	var id = ctx.getChild(3).getText();
+	// 	var entry = ctx;
+	// 	addSymbolTableEntry(this.symTableStack, id, ctx);
+	// };
 
 	MyP4Listner.prototype.enterControlDeclaration = function(ctx) {
 		var id = ctx.getChild(0).getText();
@@ -67,7 +60,6 @@ import { EOF } from 'dns';
 
 	// Enter a parse tree produced by P4Parser#tableDeclaration.
 	P4Listener.prototype.enterTableDeclaration = function(ctx: any) {
-		logloglog("enter table");
 		var id = ctx.getChild(2).getText();
 		var entry = ctx;
 		addSymbolTableEntry(this.symTableStack, id, ctx);
@@ -76,10 +68,6 @@ import { EOF } from 'dns';
 
 	P4Listener.prototype.exitTableDeclaration = function(ctx: any) {
 		this.symTableStack.pop();  
-	};
-
-	MyP4Listner.prototype.enterAssignmentOrMethodCallStatement = function(ctx) {
-		logloglog("Assign: " + ctx.getText());
 	};
 
 	export var SymbolTablePass = MyP4Listner;

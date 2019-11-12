@@ -25,30 +25,28 @@ import { ParseTreeWalker } from 'antlr4/tree';
 import { SIGUSR1 } from 'constants';
 import { EOF } from 'dns';
 
+	
+
+	function undefVarAlert(value){
+		logloglog("Error: undefined variable \"" + value + "\"");
+	}
+
 	var MyP4Listner = function(table) : void {
 		P4Listener.call(this); // inherit default listener
 		P4Listener.symTableStack = table;
 		return this;
 	};
 
-
-	function addSymbolTableEntry(stack, id, entry) {
-		logloglog("identifier: " + id);
-		logloglog("entry: " + entry);
-		logloglog("stack height: " + stack.height());
-		stack.set(id, entry); 
-	}
-
-	function peekAndPop(stack, saver){
-		var peeker = stack[stack.length-1];
-		var popper = peeker.pop();
-		saver.add(popper);	//I am just saving this in a another array, but I need to figure out how to organize it
-	
-		return stack;
-	}
-
 	// continue inheriting default listener
 	MyP4Listner.prototype = Object.create(P4Listener.prototype);
 	MyP4Listner.prototype.constructor = MyP4Listner;
+
+	MyP4Listner.prototype.enterActionRef = function(ctx) {
+		if (this.symTableStack.getItsHeight(ctx.getText()) == undefined){
+			undefVarAlert(ctx.getText());
+			logloglog("has it been declared?");
+		}
+	};
+
 
 export var SymbolTableCheck = MyP4Listner;

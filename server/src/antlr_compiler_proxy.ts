@@ -38,23 +38,22 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 	parser.buildParseTrees = true;
 	var tree = parser.input();
 
-	// need p4Visitor here -> new p4visitor() = my visitor.start(tree)
-
-
-	//logloglog(tree.toStringTree(parser.ruleNames));
 	////Establishing symbol table -> installed package from https://www.npmjs.com/package/symbol-table (npm install symbol-table)
 	var SymbolTable = require("symbol-table");
 	var SymbolTableStack = require("symbol-table/stack");
 	var symTableStack = SymbolTableStack();
 
-	var symTablePass = new SymbolTablePass(symTableStack);	
+	var symTablePass = new SymbolTablePass(symTableStack);
+	
+	ParseTreeWalker.DEFAULT.walk(symTablePass, tree);
 	try{
-		ParseTreeWalker.DEFAULT.walk(symTablePass, tree);	//now this is the code that walks the AST? and searches for errors?
+		//ParseTreeWalker.DEFAULT.walk(symTablePass, tree);	
 	} catch(e){}
 
-	var symTableCheck = new SymbolTableCheck(symTableStack);	
+	var symTableCheck = new SymbolTableCheck(symTableStack);
+	ParseTreeWalker.DEFAULT.walk(symTableCheck, tree);	
 	try{
-		ParseTreeWalker.DEFAULT.walk(symTableCheck, tree);	//now this is the code that walks the AST? and searches for errors?
+		//ParseTreeWalker.DEFAULT.walk(symTableCheck, tree);
 	} catch(e){}
 }
 
