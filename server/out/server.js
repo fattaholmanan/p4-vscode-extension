@@ -23,7 +23,6 @@ const utils_1 = require("./utils");
 exports.connection = vscode_languageserver_1.createConnection(vscode_languageserver_1.ProposedFeatures.all);
 // create an object for the AST. Now it is very minimalist.
 exports.p4Program = new P4Program_1.P4Program();
-exports.p4PlusProgram = new P4Program_1.P4Program();
 // Create a simple text document manager. The text document manager
 // supports full document sync only
 let documents = new vscode_languageserver_1.TextDocuments();
