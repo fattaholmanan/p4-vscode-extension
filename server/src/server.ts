@@ -15,11 +15,12 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 } from 'vscode-languageserver';
-import { sendToCiscoServer } from './cisco_compiler_proxy' ;
+import { sendToRemoteServer } from './remote_compiler_proxy' ;
 import { P4Program } from './domain/P4Program';
 import { sendToAntlrCompiler } from './antlr_compiler_proxy';
 import { P4ExtensionSettings, defaultSettings } from './p4_extension_setting';
-import { loglog, logloglog } from './utils';
+import { logDebug, logInfo } from './logger';
+import { getDocumentSettings } from './utils';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -39,8 +40,6 @@ export let hasDiagnosticRelatedInformationCapability: boolean = false;
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
 
-	// Does the client support the `workspace/configuration` request?
-	// If not, we will fall back using global settings
 	hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
 	hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
 	hasDiagnosticRelatedInformationCapability =
@@ -71,7 +70,7 @@ connection.onInitialized(() => {
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			loglog('Workspace folder change event received.');
+			logInfo('Workspace folder change event received.');
 		});
 	}
 });
@@ -85,18 +84,11 @@ export let globalSettings: P4ExtensionSettings = defaultSettings;
 export let documentSettings: Map<string, Thenable<P4ExtensionSettings>> = new Map();
 
 connection.onDidChangeConfiguration(async change => {
-	// let mySetting = await getDocumentSettings();
+	// let mySetting = await getDocument\Settings();
 
-	documents.all().forEach(sendToCiscoServer);
+	documents.all().forEach(sendToRemoteServer);
 	documents.all().forEach(sendToAntlrCompiler);
 });
-
-// function getDocumentSettings(): Thenable<P4ExtensionSettings> {
-// 	let result = connection.workspace.getConfiguration({
-// 		section: 'p4Extension'
-// 	});
-// 	return result;
-// }
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
@@ -104,8 +96,7 @@ documents.onDidClose(e => {
 });
 
 connection.onDidChangeWatchedFiles(_change => {
-	// Monitored files have change in VSCode
-	loglog('We received an file change event');
+	logDebug('We received an file change event');
 });
 
 // This handler provides the initial list of the completion items.
@@ -148,25 +139,25 @@ connection.onCompletionResolve(
 	}
 );
 
-/*
+
 connection.onDidOpenTextDocument((params) => {
 	// A text document got opened in VSCode.
 	// params.uri uniquely identifies the document. For documents store on disk this is a file URI.
 	// params.text the initial full content of the document.
-	loglog(`${params.textDocument.uri} opened.`);
+	logInfo(`${params.textDocument.uri} opened.`);
 });
 connection.onDidChangeTextDocument((params) => {
 	// The content of a text document did change in VSCode.
 	// params.uri uniquely identifies the document.
 	// params.contentChanges describe the content changes to the document.
-	loglog(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
+	logInfo(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
 });
 connection.onDidCloseTextDocument((params) => {
 	// A text document got closed in VSCode.
 	// params.uri uniquely identifies the document.
-	loglog(`${params.textDocument.uri} closed.`);
+	logInfo(`${params.textDocument.uri} closed.`);
 });
-*/
+
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
@@ -177,7 +168,9 @@ connection.listen();
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
-documents.onDidChangeContent(change => {
-	sendToCiscoServer(change.document);
+documents.onDidChangeContent(async change => {
+	let mySetting = await getDocumentSettings(change.document.uri);
+	if(mySetting.useRemoteServer)
+		sendToRemoteServer(change.document);
 	sendToAntlrCompiler(change.document);
 });

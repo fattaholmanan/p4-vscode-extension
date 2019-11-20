@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
-const utils_1 = require("./utils");
+const logger_1 = require("./logger");
 exports.antlrP4HeaderDec = new Map();
 exports.antlrP4StructHeaders = new Map();
 const antlr4_1 = require("antlr4");
@@ -25,13 +25,13 @@ exports.SymbolTable = require("symbol-table/stack")();
 //pushing global scope to the top of the pointer array
 // symPtrs.push(SymbolTable());
 MyP4Listner.prototype.enterConstantDeclaration = function (ctx) {
-    utils_1.logloglog("ENTER - Constant - " + ctx.name().getText());
+    logger_1.logInfo("ENTER - Constant - " + ctx.name().getText());
     exports.SymbolTable.set(ctx.name().getText(), { "ctx": ctx, "typeref": ctx.typeref().getText() });
 };
 MyP4Listner.prototype.enterParserDeclaration = function (ctx) {
     let name = ctx.parserTypeDeclaration().name().getText();
     let typeref = "parser";
-    utils_1.logloglog("ENTER - Parser - " + name);
+    logger_1.logInfo("ENTER - Parser - " + name);
     exports.SymbolTable.set(name, { "ctx": ctx, "typeref": typeref });
     exports.SymbolTable.push();
 };
@@ -39,7 +39,7 @@ MyP4Listner.prototype.enterParserDeclaration = function (ctx) {
     exports.SymbolTable.pop();
 };
 function sendToAntlrCompiler(textDocument) {
-    utils_1.loglog("Running Antlr Compiler");
+    logger_1.logInfo("Compile request to ANTLR4 compiler.....");
     let myP4Listner = new MyP4Listner();
     let errorListener = new MyErrorListner(textDocument);
     let tree = setupLexerAndParser(textDocument, errorListener);

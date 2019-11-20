@@ -27,6 +27,11 @@
 			"type": "object",
 			"title": "P4 Client Configuration",
 			"properties": {
+				"p4Extension.useRemoteCompiler": {
+					"scope": "window",
+					"type" : "boolean",
+					"default": "false"
+				},
 				"p4Extension.maxNumberOfProblems": {
 					"scope": "resource",
 					"type": "number",

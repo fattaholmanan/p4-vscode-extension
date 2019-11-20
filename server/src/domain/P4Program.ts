@@ -1,7 +1,6 @@
 import { P4Header } from './P4Header';
 import { P4KeywordType } from './P4KeywordType';
 import { CompletionItemKind, CompletionItem } from 'vscode-languageserver';
-import { logloglog } from '../utils';
 import { P4IR } from './P4IR';
 
 

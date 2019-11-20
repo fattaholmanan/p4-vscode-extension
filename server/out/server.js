@@ -13,10 +13,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
-const cisco_compiler_proxy_1 = require("./cisco_compiler_proxy");
+const remote_compiler_proxy_1 = require("./remote_compiler_proxy");
 const P4Program_1 = require("./domain/P4Program");
 const antlr_compiler_proxy_1 = require("./antlr_compiler_proxy");
 const p4_extension_setting_1 = require("./p4_extension_setting");
+const logger_1 = require("./logger");
 const utils_1 = require("./utils");
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -31,8 +32,6 @@ exports.hasWorkspaceFolderCapability = false;
 exports.hasDiagnosticRelatedInformationCapability = false;
 exports.connection.onInitialize((params) => {
     let capabilities = params.capabilities;
-    // Does the client support the `workspace/configuration` request?
-    // If not, we will fall back using global settings
     exports.hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
     exports.hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
     exports.hasDiagnosticRelatedInformationCapability =
@@ -57,7 +56,7 @@ exports.connection.onInitialized(() => {
     }
     if (exports.hasWorkspaceFolderCapability) {
         exports.connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            utils_1.loglog('Workspace folder change event received.');
+            logger_1.logInfo('Workspace folder change event received.');
         });
     }
 });
@@ -68,23 +67,16 @@ exports.globalSettings = p4_extension_setting_1.defaultSettings;
 // Cache the settings of all open documents
 exports.documentSettings = new Map();
 exports.connection.onDidChangeConfiguration((change) => __awaiter(this, void 0, void 0, function* () {
-    // let mySetting = await getDocumentSettings();
-    documents.all().forEach(cisco_compiler_proxy_1.sendToCiscoServer);
+    // let mySetting = await getDocument\Settings();
+    documents.all().forEach(remote_compiler_proxy_1.sendToRemoteServer);
     documents.all().forEach(antlr_compiler_proxy_1.sendToAntlrCompiler);
 }));
-// function getDocumentSettings(): Thenable<P4ExtensionSettings> {
-// 	let result = connection.workspace.getConfiguration({
-// 		section: 'p4Extension'
-// 	});
-// 	return result;
-// }
 // Only keep settings for open documents
 documents.onDidClose(e => {
     exports.documentSettings.delete(e.document.uri);
 });
 exports.connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
-    utils_1.loglog('We received an file change event');
+    logger_1.logDebug('We received an file change event');
 });
 // This handler provides the initial list of the completion items.
 exports.connection.onCompletion((_textDocumentPosition) => {
@@ -119,25 +111,23 @@ exports.connection.onCompletionResolve((item) => {
     }
     return item;
 });
-/*
-connection.onDidOpenTextDocument((params) => {
+exports.connection.onDidOpenTextDocument((params) => {
     // A text document got opened in VSCode.
     // params.uri uniquely identifies the document. For documents store on disk this is a file URI.
     // params.text the initial full content of the document.
-    loglog(`${params.textDocument.uri} opened.`);
+    logger_1.logInfo(`${params.textDocument.uri} opened.`);
 });
-connection.onDidChangeTextDocument((params) => {
+exports.connection.onDidChangeTextDocument((params) => {
     // The content of a text document did change in VSCode.
     // params.uri uniquely identifies the document.
     // params.contentChanges describe the content changes to the document.
-    loglog(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
+    logger_1.logInfo(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
 });
-connection.onDidCloseTextDocument((params) => {
+exports.connection.onDidCloseTextDocument((params) => {
     // A text document got closed in VSCode.
     // params.uri uniquely identifies the document.
-    loglog(`${params.textDocument.uri} closed.`);
+    logger_1.logInfo(`${params.textDocument.uri} closed.`);
 });
-*/
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(exports.connection);
@@ -145,8 +135,10 @@ documents.listen(exports.connection);
 exports.connection.listen();
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
-documents.onDidChangeContent(change => {
-    cisco_compiler_proxy_1.sendToCiscoServer(change.document);
+documents.onDidChangeContent((change) => __awaiter(this, void 0, void 0, function* () {
+    let mySetting = yield utils_1.getDocumentSettings(change.document.uri);
+    if (mySetting.useRemoteServer)
+        remote_compiler_proxy_1.sendToRemoteServer(change.document);
     antlr_compiler_proxy_1.sendToAntlrCompiler(change.document);
-});
+}));
 //# sourceMappingURL=server.js.map

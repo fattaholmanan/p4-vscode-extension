@@ -5,6 +5,7 @@ export interface P4ExtensionSettings {
 	usernamePassword?: UseramePassword;
 	autoUserNamePassword: boolean;
 	userRememberToken?: string;
+	useRemoteServer: boolean;
 }
 
 interface UseramePassword {
@@ -16,5 +17,6 @@ interface UseramePassword {
 export const defaultSettings: P4ExtensionSettings = { 
 	maxNumberOfProblems: 100,
 	compilerServerAddress: "",
-	autoUserNamePassword: false
+	autoUserNamePassword: false,
+	useRemoteServer: false
 };

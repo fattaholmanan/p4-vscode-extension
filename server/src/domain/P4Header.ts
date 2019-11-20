@@ -1,4 +1,3 @@
-import { logloglog } from '../utils';
 import { CompletionItemKind, CompletionItem } from 'vscode-languageserver';
 
 export class P4Header {

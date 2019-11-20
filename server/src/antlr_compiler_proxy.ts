@@ -6,7 +6,7 @@ import {
 	Range,
 } from 'vscode-languageserver';
 
-import { loglog , logloglog } from './utils';
+import { logDebug, logInfo} from './logger';
 
 
 export let antlrP4HeaderDec: Map<string, any[]> = new Map();
@@ -43,7 +43,7 @@ export var SymbolTable = require("symbol-table/stack")();
 
 
 MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
-	logloglog("ENTER - Constant - " + ctx.name().getText());
+	logInfo("ENTER - Constant - " + ctx.name().getText());
 	SymbolTable.set(ctx.name().getText(), {"ctx": ctx, "typeref": ctx.typeref().getText()});
 };
 
@@ -51,7 +51,7 @@ MyP4Listner.prototype.enterParserDeclaration = function(ctx) {
 	let name:string = ctx.parserTypeDeclaration().name().getText();
 	let typeref:string = "parser";
 
-	logloglog("ENTER - Parser - " + name);
+	logInfo("ENTER - Parser - " + name);
 	SymbolTable.set(name, {"ctx": ctx, "typeref": typeref});
 	SymbolTable.push();
 };
@@ -62,7 +62,8 @@ MyP4Listner.prototype.enterParserDeclaration = function(ctx) {
 
 
 export function sendToAntlrCompiler(textDocument: TextDocument){
-	loglog("Running Antlr Compiler");
+	logInfo("Compile request to ANTLR4 compiler.....");
+
 	let myP4Listner = new MyP4Listner();
 	let errorListener: MyErrorListner = new MyErrorListner(textDocument);
 	let tree = setupLexerAndParser(textDocument, errorListener);

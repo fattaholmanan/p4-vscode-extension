@@ -7,16 +7,17 @@ import {
 
 import { connection, hasDiagnosticRelatedInformationCapability, p4Program } from './server';
 import { P4Header } from './domain/P4Header';
-import { loglog , getDocumentSettings, logloglog} from './utils';
+import { logDebug, logInfo, logError } from './logger';
+import { getDocumentSettings} from './utils';
 
-export async function sendToCiscoServer(textDocument: TextDocument){
-	loglog("A change is requested!");
+export async function sendToRemoteServer(textDocument: TextDocument){
+	logInfo("Compile request to remote server.....");
 
 	const request = require('request');
 	let mySetting = await getDocumentSettings(textDocument.uri);
 	let apiUrl: string = mySetting.compilerServerAddress + "/p4_codes";
 
-	loglog("cookie to call API: " + mySetting.userRememberToken);
+	logInfo("  Cookie to call API: " + mySetting.userRememberToken);
 	
 	request.post({
 		url: apiUrl,
@@ -34,26 +35,25 @@ export async function sendToCiscoServer(textDocument: TextDocument){
 	function(err,response,body){
 		try{
 			let new_body:any = JSON.parse(body.replace(/&quot;/g,'"'));
-			loglog(JSON.stringify(new_body));
-			loglog("---------------------------)");
+			logInfo(JSON.stringify(new_body));
 
 			if (!err && response.statusCode === 200) {
-				loglog("API HTTP status: " + new_body.status);
+				logInfo("API HTTP status: " + new_body.status);
 
 				if(new_body.status == "error" && new_body["content"] == "compile_error"){
-					loglog("code has some error");
-					// parseBmv2CompilerOutputErr(new_body.output, textDocument, hasDiagnosticRelatedInformationCapability);
+					logInfo("code has some error");
+					parseBmv2CompilerOutputErr(new_body.output, textDocument, hasDiagnosticRelatedInformationCapability);
 				}
 				if(new_body.status == "ok" && new_body["content"] == "json_header"){
-					loglog("Code has been succesfully merged!");
+					logInfo("Code has been succesfully merged!");
 					parseBmv2CompilerOutputOk(new_body.output, textDocument);
 				}
 			}
 			else {
-				loglog("server error: " + err);
+				logError("server error: " + err);
 			}
 		}catch(e){
-			loglog("Exception: " + e);
+			logError("Exception: " + e);
 		}
 	});
 }
