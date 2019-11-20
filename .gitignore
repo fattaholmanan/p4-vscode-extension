@@ -2,3 +2,16 @@
 **/._.DS_Store
 p4src_example
 p4src_example/*
+node_modules/
+out/
+dist/
+npm-debug.log
+*.vsix
+*.zip
+*.tar.gz
+.nyc_output
+coverage
+.cache
+lerna-debug.log
+*.wasm
+build/*
