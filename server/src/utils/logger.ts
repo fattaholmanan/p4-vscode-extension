@@ -1,4 +1,4 @@
-import { p4ExtensionServer } from './server';
+import { p4ExtensionServer } from '../server';
 
 export enum LOGGER_MODE{
 	DEBUG, // < INFO
@@ -21,4 +21,11 @@ export function logDebug(msg:string){
 
 export function logError(msg:string){
 	log(msg, LOGGER_MODE.ERROR);
+}
+
+export function logDebugT(msg:string){
+	let t:Date = new Date();
+	let time:string = "[" + t.getHours() + ":" + t.getMinutes() + ":" + t.getSeconds() + "." + Date.now()%1000 + "]  ";
+
+	log(time + msg, LOGGER_MODE.DEBUG);
 }

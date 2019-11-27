@@ -15,9 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
 const remote_compiler_proxy_1 = require("./remote_compiler_proxy");
 const antlr_compiler_proxy_1 = require("./antlr_compiler_proxy");
-const logger_1 = require("./logger");
+const logger_1 = require("./utils/logger");
 const utils_1 = require("./utils");
 const CompletionProvider_1 = require("./providers/CompletionProvider");
+const DocumentHighlightProvider_1 = require("./providers/DocumentHighlightProvider");
 let connection = vscode_languageserver_1.createConnection(vscode_languageserver_1.ProposedFeatures.all);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -98,6 +99,7 @@ class Server {
     registerProviders() {
         // This handler provides the initial list of the completion items.
         connection.onCompletion(CompletionProvider_1.completionProvider);
+        connection.onDocumentHighlight(DocumentHighlightProvider_1.highlightProvider);
         // This handler resolve additional information for the item selected in
         // the completion list.
         connection.onCompletionResolve((item) => {

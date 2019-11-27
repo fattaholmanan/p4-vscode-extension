@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
-const logger_1 = require("./logger");
+const logger_1 = require("./utils/logger");
 const utils_1 = require("./utils");
 const server_1 = require("./server");
 function sendToRemoteServer(textDocument) {

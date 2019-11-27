@@ -1,5 +1,5 @@
 import { TextDocumentPositionParams, TextDocument, CompletionItem } from 'vscode-languageserver';
-import { p4ExtensionServer } from '../server'
+import { p4ExtensionServer } from '../server';
 
 export function completionProvider(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[]{
 	let textDocument: TextDocument = p4ExtensionServer.documents.get(_textDocumentPosition.textDocument.uri);
@@ -10,7 +10,6 @@ export function completionProvider(_textDocumentPosition: TextDocumentPositionPa
 	return null;//p4Program.getAutoCompletion(keyword);
 }
 
-
 function findkeywordByPosition(text: string, pos: number): string{
 	let firstPart:string = text.substring(0, pos);
 	let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
@@ -20,4 +19,3 @@ function findkeywordByPosition(text: string, pos: number): string{
 		return keyword[0].substr(0,keyword[0].length - 1);
 	return "";
 }
-

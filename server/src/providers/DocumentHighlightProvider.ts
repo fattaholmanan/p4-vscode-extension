@@ -1,12 +1,11 @@
+import { TextDocumentPositionParams, CompletionItem, DocumentHighlight } from 'vscode-languageserver';
+
 /*
  * DocumentHighlightProvider
  *
  * Super basic highlight provider
  */
 
-import Provider from './Provider';
-
-// TODO support more highlight use cases than just balanced pairs
-export default class DocumentHighlightProvider extends Provider {
-	
+export function highlightProvider(_textDocumentPosition: TextDocumentPositionParams): DocumentHighlight[]{
+	return [];
 }

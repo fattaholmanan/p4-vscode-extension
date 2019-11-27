@@ -14,11 +14,12 @@ import {
 	DidChangeConfigurationNotification,
 } from 'vscode-languageserver';
 import { sendToRemoteServer } from './remote_compiler_proxy' ;
-import { sendToAntlrCompiler , P4Program } from './antlr_compiler_proxy';
-import { P4ExtensionSettings, defaultSettings } from './p4_extension_setting';
-import { logDebug, logInfo } from './logger';
+import { sendToAntlrCompiler } from './antlr_compiler_proxy';
+import { P4ExtensionSettings } from './p4_extension_setting';
+import { logDebug, logInfo } from './utils/logger';
 import { getDocumentSettings } from './utils';
 import { completionProvider } from './providers/CompletionProvider';
+import { highlightProvider } from './providers/DocumentHighlightProvider';
 
 let connection = createConnection(ProposedFeatures.all);
 let hasConfigurationCapability: boolean = false;
@@ -119,6 +120,7 @@ class Server {
 	private registerProviders(){
 		// This handler provides the initial list of the completion items.
 		connection.onCompletion(completionProvider);
+		connection.onDocumentHighlight(highlightProvider);
 
 		// This handler resolve additional information for the item selected in
 		// the completion list.

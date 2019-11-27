@@ -5,7 +5,7 @@ import {
 	CompletionItemKind,
 } from 'vscode-languageserver';
 
-import { logDebug, logInfo, logError } from './logger';
+import { logDebug, logInfo, logError } from './utils/logger';
 import { getDocumentSettings} from './utils';
 import { p4ExtensionServer } from './server';
 

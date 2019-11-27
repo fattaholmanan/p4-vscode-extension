@@ -2,6 +2,6 @@ export enum P4IRTypes {
 	HEADER,
 	CONTROLLER,
 	TABLE,
-	CONSTANT_VAR,
-	VAR
+	VAR,
+	P4_PROGRAM
 }
