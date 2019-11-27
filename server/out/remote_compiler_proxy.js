@@ -9,10 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
-const server_1 = require("./server");
-const P4Header_1 = require("./domain/P4Header");
 const logger_1 = require("./logger");
 const utils_1 = require("./utils");
+const server_1 = require("./server");
 function sendToRemoteServer(textDocument) {
     return __awaiter(this, void 0, void 0, function* () {
         logger_1.logInfo("Compile request to remote server.....");
@@ -39,7 +38,7 @@ function sendToRemoteServer(textDocument) {
                     logger_1.logInfo("API HTTP status: " + new_body.status);
                     if (new_body.status == "error" && new_body["content"] == "compile_error") {
                         logger_1.logInfo("code has some error");
-                        parseBmv2CompilerOutputErr(new_body.output, textDocument, server_1.hasDiagnosticRelatedInformationCapability);
+                        parseBmv2CompilerOutputErr(new_body.output, textDocument);
                     }
                     if (new_body.status == "ok" && new_body["content"] == "json_header") {
                         logger_1.logInfo("Code has been succesfully merged!");
@@ -58,23 +57,7 @@ function sendToRemoteServer(textDocument) {
 }
 exports.sendToRemoteServer = sendToRemoteServer;
 function parseBmv2CompilerOutputOk(compiledJsonFile, textDocument) {
-    if (server_1.p4Program.isEmpty())
-        updateInternalDataStructures(compiledJsonFile);
-    let diagnostics = [];
-    server_1.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-// parse the compiler json file so as to reply to autocomplition
-function updateInternalDataStructures(jsonObj) {
-    if (jsonObj == null)
-        return;
-    for (var h in jsonObj.header_types) {
-        let newHeader = new P4Header_1.P4Header(h, jsonObj.header_types[h]);
-        server_1.p4Program.addHeader(newHeader);
-    }
-    for (var inst in jsonObj.instantiations) {
-        let headerType = jsonObj.instantiations[inst];
-        server_1.p4Program.addHeaderInstantiation(headerType, inst);
-    }
+    throw new Error("to be implemented!");
 }
 function extractErrorMessage(errSection) {
     var first_layer = /(\(\d+\))?(error.*)/.exec(errSection);
@@ -94,7 +77,7 @@ function extractErrorMessage(errSection) {
         return first_layer[0];
     }
 }
-function parseBmv2CompilerOutputErr(compileOutput, textDocument, hasDiagnosticRelatedInformationCapability) {
+function parseBmv2CompilerOutputErr(compileOutput, textDocument) {
     return __awaiter(this, void 0, void 0, function* () {
         let text = compileOutput.toString();
         let settings = yield utils_1.getDocumentSettings(textDocument.uri);
@@ -127,7 +110,7 @@ function parseBmv2CompilerOutputErr(compileOutput, textDocument, hasDiagnosticRe
             }
             else {
                 diagnosic = diagnostics[diagnostics.length - 1];
-                if (hasDiagnosticRelatedInformationCapability && diagnosic != null) {
+                if (diagnosic != null) {
                     diagnosic.relatedInformation.push({
                         location: {
                             uri: textDocument.uri,
@@ -141,7 +124,7 @@ function parseBmv2CompilerOutputErr(compileOutput, textDocument, hasDiagnosticRe
                 }
             }
         }
-        server_1.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+        server_1.p4ExtensionServer.sendDiagnostics({ uri: textDocument.uri, diagnostics });
     });
 }
 function getStartingOffsetOfDocument(lineNumber, rawCode, textDocument) {

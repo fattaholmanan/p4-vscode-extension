@@ -9,7 +9,7 @@ var LOGGER_MODE;
     LOGGER_MODE[LOGGER_MODE["USER_LOG"] = 3] = "USER_LOG";
 })(LOGGER_MODE = exports.LOGGER_MODE || (exports.LOGGER_MODE = {}));
 function log(msg, mode) {
-    server_1.connection.console.log(msg);
+    server_1.p4ExtensionServer.connection.console.log(msg);
 }
 exports.log = log;
 function logInfo(msg) {

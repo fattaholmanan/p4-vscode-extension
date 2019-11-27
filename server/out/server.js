@@ -14,131 +14,107 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode_languageserver_1 = require("vscode-languageserver");
 const remote_compiler_proxy_1 = require("./remote_compiler_proxy");
-const P4Program_1 = require("./domain/P4Program");
 const antlr_compiler_proxy_1 = require("./antlr_compiler_proxy");
-const p4_extension_setting_1 = require("./p4_extension_setting");
 const logger_1 = require("./logger");
 const utils_1 = require("./utils");
-// Create a connection for the server. The connection uses Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
-exports.connection = vscode_languageserver_1.createConnection(vscode_languageserver_1.ProposedFeatures.all);
-// create an object for the AST. Now it is very minimalist.
-exports.p4Program = new P4Program_1.P4Program();
-// Create a simple text document manager. The text document manager
-// supports full document sync only
-let documents = new vscode_languageserver_1.TextDocuments();
-exports.hasConfigurationCapability = false;
-exports.hasWorkspaceFolderCapability = false;
-exports.hasDiagnosticRelatedInformationCapability = false;
-exports.connection.onInitialize((params) => {
-    let capabilities = params.capabilities;
-    exports.hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
-    exports.hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
-    exports.hasDiagnosticRelatedInformationCapability =
-        !!(capabilities.textDocument &&
-            capabilities.textDocument.publishDiagnostics &&
-            capabilities.textDocument.publishDiagnostics.relatedInformation);
-    return {
-        capabilities: {
-            textDocumentSync: documents.syncKind,
-            // Tell the client that the server supports code completion
-            completionProvider: {
-                resolveProvider: true,
-                triggerCharacters: ["<", ">", "."]
-            }
-        }
-    };
-});
-exports.connection.onInitialized(() => {
-    if (exports.hasConfigurationCapability) {
-        // Register for all configuration changes.
-        exports.connection.client.register(vscode_languageserver_1.DidChangeConfigurationNotification.type, undefined);
+const CompletionProvider_1 = require("./providers/CompletionProvider");
+let connection = vscode_languageserver_1.createConnection(vscode_languageserver_1.ProposedFeatures.all);
+let hasConfigurationCapability = false;
+let hasWorkspaceFolderCapability = false;
+exports.documentSettings = new Map();
+class Server {
+    constructor(connection) {
+        this.connection = connection;
+        this.documents = new vscode_languageserver_1.TextDocuments();
+        this.initializeConnection();
+        this.initializeDocuments();
+        this.registerProviders();
+        this.documents.listen(connection);
+        this.connection.listen();
     }
-    if (exports.hasWorkspaceFolderCapability) {
-        exports.connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            logger_1.logInfo('Workspace folder change event received.');
+    initializeDocuments() {
+        this.documents.onDidChangeContent((change) => __awaiter(this, void 0, void 0, function* () {
+            let mySetting = yield utils_1.getDocumentSettings(change.document.uri);
+            if (mySetting.useRemoteServer)
+                remote_compiler_proxy_1.sendToRemoteServer(change.document);
+            antlr_compiler_proxy_1.sendToAntlrCompiler(change.document);
+        }));
+        this.connection.onDidChangeWatchedFiles(_change => {
+            logger_1.logDebug('We received an file change event');
+        });
+        this.connection.onDidOpenTextDocument((params) => {
+            // A text document got opened in VSCode.
+            // params.uri uniquely identifies the document. For documents store on disk this is a file URI.
+            // params.text the initial full content of the document.
+            logger_1.logInfo(`${params.textDocument.uri} opened.`);
+        });
+        this.connection.onDidChangeTextDocument((params) => {
+            // The content of a text document did change in VSCode.
+            // params.uri uniquely identifies the document.
+            // params.contentChanges describe the content changes to the document.
+            logger_1.logInfo(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
+        });
+        this.connection.onDidCloseTextDocument((params) => {
+            // A text document got closed in VSCode.
+            // params.uri uniquely identifies the document.
+            logger_1.logInfo(`${params.textDocument.uri} closed.`);
         });
     }
-});
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-exports.globalSettings = p4_extension_setting_1.defaultSettings;
-// Cache the settings of all open documents
-exports.documentSettings = new Map();
-exports.connection.onDidChangeConfiguration((change) => __awaiter(this, void 0, void 0, function* () {
-    // let mySetting = await getDocument\Settings();
-    documents.all().forEach(remote_compiler_proxy_1.sendToRemoteServer);
-    documents.all().forEach(antlr_compiler_proxy_1.sendToAntlrCompiler);
-}));
-// Only keep settings for open documents
-documents.onDidClose(e => {
-    exports.documentSettings.delete(e.document.uri);
-});
-exports.connection.onDidChangeWatchedFiles(_change => {
-    logger_1.logDebug('We received an file change event');
-});
-// This handler provides the initial list of the completion items.
-exports.connection.onCompletion((_textDocumentPosition) => {
-    // The pass parameter contains the position of the text document in
-    // which code complete got requested. For the example we ignore this
-    // info and always provide the same completion items.
-    let textDocument = documents.get(_textDocumentPosition.textDocument.uri);
-    let _position = textDocument.offsetAt(_textDocumentPosition.position);
-    let text = textDocument.getText();
-    let keyword = findkeywordByPosition(text, _position);
-    return exports.p4Program.getAutoCompletion(keyword);
-});
-function findkeywordByPosition(text, pos) {
-    let firstPart = text.substring(0, pos);
-    let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
-    let lastLine = lines[lines.length - 1];
-    var keyword = /[a-zA-Z]+[0-9]*\.(?!.*\..*)/.exec(lastLine);
-    if (keyword != null)
-        return keyword[0].substr(0, keyword[0].length - 1);
-    return "";
+    initializeConnection() {
+        this.connection.onInitialize((params) => {
+            let capabilities = params.capabilities;
+            hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
+            hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
+            return {
+                capabilities: {
+                    textDocumentSync: this.documents.syncKind,
+                    completionProvider: {
+                        resolveProvider: true,
+                        triggerCharacters: ["<", ">", "."]
+                    },
+                    documentRangeFormattingProvider: true,
+                    documentHighlightProvider: true,
+                    foldingRangeProvider: true
+                }
+            };
+        });
+        this.connection.onInitialized(() => {
+            if (hasConfigurationCapability) {
+                // Register for all configuration changes.
+                connection.client.register(vscode_languageserver_1.DidChangeConfigurationNotification.type, undefined);
+            }
+            if (hasWorkspaceFolderCapability) {
+                connection.workspace.onDidChangeWorkspaceFolders(_event => {
+                    logger_1.logInfo('Workspace folder change event received.');
+                });
+            }
+        });
+        this.connection.onDidChangeConfiguration((change) => __awaiter(this, void 0, void 0, function* () {
+            // let mySetting = await getDocument\Settings();
+            this.documents.all().forEach(remote_compiler_proxy_1.sendToRemoteServer);
+            this.documents.all().forEach(antlr_compiler_proxy_1.sendToAntlrCompiler);
+        }));
+    }
+    registerProviders() {
+        // This handler provides the initial list of the completion items.
+        connection.onCompletion(CompletionProvider_1.completionProvider);
+        // This handler resolve additional information for the item selected in
+        // the completion list.
+        connection.onCompletionResolve((item) => {
+            if (item.data === 1) {
+                (item.detail = 'TypeScript details'),
+                    (item.documentation = 'TypeScript documentation');
+            }
+            else if (item.data === 2) {
+                (item.detail = 'JavaScript details'),
+                    (item.documentation = 'JavaScript documentation');
+            }
+            return item;
+        });
+    }
+    sendDiagnostics(params) {
+        this.connection.sendDiagnostics(params);
+    }
 }
-// This handler resolve additional information for the item selected in
-// the completion list.
-exports.connection.onCompletionResolve((item) => {
-    if (item.data === 1) {
-        (item.detail = 'TypeScript details'),
-            (item.documentation = 'TypeScript documentation');
-    }
-    else if (item.data === 2) {
-        (item.detail = 'JavaScript details'),
-            (item.documentation = 'JavaScript documentation');
-    }
-    return item;
-});
-exports.connection.onDidOpenTextDocument((params) => {
-    // A text document got opened in VSCode.
-    // params.uri uniquely identifies the document. For documents store on disk this is a file URI.
-    // params.text the initial full content of the document.
-    logger_1.logInfo(`${params.textDocument.uri} opened.`);
-});
-exports.connection.onDidChangeTextDocument((params) => {
-    // The content of a text document did change in VSCode.
-    // params.uri uniquely identifies the document.
-    // params.contentChanges describe the content changes to the document.
-    logger_1.logInfo(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-});
-exports.connection.onDidCloseTextDocument((params) => {
-    // A text document got closed in VSCode.
-    // params.uri uniquely identifies the document.
-    logger_1.logInfo(`${params.textDocument.uri} closed.`);
-});
-// Make the text document manager listen on the connection
-// for open, change and close text document events
-documents.listen(exports.connection);
-// Listen on the connection
-exports.connection.listen();
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
-documents.onDidChangeContent((change) => __awaiter(this, void 0, void 0, function* () {
-    let mySetting = yield utils_1.getDocumentSettings(change.document.uri);
-    if (mySetting.useRemoteServer)
-        remote_compiler_proxy_1.sendToRemoteServer(change.document);
-    antlr_compiler_proxy_1.sendToAntlrCompiler(change.document);
-}));
+exports.p4ExtensionServer = new Server(connection);
 //# sourceMappingURL=server.js.map

@@ -1,4 +1,4 @@
-import { connection } from './server';
+import { p4ExtensionServer } from './server';
 
 export enum LOGGER_MODE{
 	DEBUG, // < INFO
@@ -8,7 +8,7 @@ export enum LOGGER_MODE{
 }
 
 export function log(msg:string, mode:LOGGER_MODE){
-	connection.console.log(msg);
+	p4ExtensionServer.connection.console.log(msg);
 }
 
 export function logInfo(msg:string){

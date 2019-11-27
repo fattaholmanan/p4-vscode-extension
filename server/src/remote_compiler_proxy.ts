@@ -5,10 +5,9 @@ import {
 	CompletionItemKind,
 } from 'vscode-languageserver';
 
-import { connection, hasDiagnosticRelatedInformationCapability, p4Program } from './server';
-import { P4Header } from './domain/P4Header';
 import { logDebug, logInfo, logError } from './logger';
 import { getDocumentSettings} from './utils';
+import { p4ExtensionServer } from './server';
 
 export async function sendToRemoteServer(textDocument: TextDocument){
 	logInfo("Compile request to remote server.....");
@@ -42,7 +41,7 @@ export async function sendToRemoteServer(textDocument: TextDocument){
 
 				if(new_body.status == "error" && new_body["content"] == "compile_error"){
 					logInfo("code has some error");
-					parseBmv2CompilerOutputErr(new_body.output, textDocument, hasDiagnosticRelatedInformationCapability);
+					parseBmv2CompilerOutputErr(new_body.output, textDocument);
 				}
 				if(new_body.status == "ok" && new_body["content"] == "json_header"){
 					logInfo("Code has been succesfully merged!");
@@ -59,26 +58,7 @@ export async function sendToRemoteServer(textDocument: TextDocument){
 }
 
 function parseBmv2CompilerOutputOk(compiledJsonFile: JSON, textDocument: TextDocument){
-	if(p4Program.isEmpty())
-		updateInternalDataStructures(compiledJsonFile);
-	let diagnostics: Diagnostic[] = [];
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-}
-
-// parse the compiler json file so as to reply to autocomplition
-function updateInternalDataStructures(jsonObj){
-	if(jsonObj == null)
-		return;
-
-	for(var h in jsonObj.header_types){
-		let newHeader: P4Header = new P4Header(h, jsonObj.header_types[h]);
-		p4Program.addHeader(newHeader);
-	}
-
-	for(var inst in jsonObj.instantiations){
-		let headerType: string = jsonObj.instantiations[inst];
-		p4Program.addHeaderInstantiation(headerType, inst);
-	}
+	throw new Error("to be implemented!");
 }
 
 function extractErrorMessage(errSection: string): string{
@@ -100,7 +80,7 @@ function extractErrorMessage(errSection: string): string{
 	}
 }
 
-async function parseBmv2CompilerOutputErr(compileOutput: string, textDocument: TextDocument, hasDiagnosticRelatedInformationCapability:boolean){
+async function parseBmv2CompilerOutputErr(compileOutput: string, textDocument: TextDocument){
 	let text = compileOutput.toString();
 
 	let settings = await getDocumentSettings(textDocument.uri);
@@ -135,7 +115,7 @@ async function parseBmv2CompilerOutputErr(compileOutput: string, textDocument: T
 			diagnostics.push(diagnosic);
 		}else{
 			diagnosic = diagnostics[diagnostics.length - 1];
-			if (hasDiagnosticRelatedInformationCapability && diagnosic != null) {
+			if (diagnosic != null) {
 				diagnosic.relatedInformation.push({
 					location: {
 						uri: textDocument.uri,
@@ -149,7 +129,7 @@ async function parseBmv2CompilerOutputErr(compileOutput: string, textDocument: T
 			}
 		}
 	}
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	p4ExtensionServer.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
 function getStartingOffsetOfDocument(lineNumber: number, rawCode: string, textDocument: TextDocument): number{
