@@ -4,43 +4,25 @@ import Stack from '../utils/stack';
 import { P4IR, Attribute } from './p4_ir';
 import { P4IRTypes } from './p4_ir_types';
 import { TextDocumentPositionParams, CompletionItem } from 'vscode-languageserver';
+import IntervalDS from '../utils/interval_ds';
 
 export class SymbolTable{
 	SYMBOL_STACK: Stack<P4IR>;
-	SYMBOL_ARR: Array<P4IR>;
+	SYMBOL_ARR: IntervalDS;
 
 	constructor(){
 		this.SYMBOL_STACK = new Stack();
-		this.SYMBOL_ARR = new Array<P4IR>();
+		this.SYMBOL_ARR = new IntervalDS();
 	}
 
 	getAutoCompletion(keyword: string, pos: TextDocumentPositionParams): CompletionItem[] {
 		logDebug("keyword: " + keyword);
 		let lineNumber: number = pos.position.line;
+		let p: P4IR | [P4IR, number] = this.SYMBOL_ARR.get(lineNumber);
 
-		let tmpMin: number = Number.MAX_VALUE;
-		let tmpP4Ir: P4IR | null = null;
-		for (let p4Ir of this.SYMBOL_ARR) {
-			if(p4Ir.isInsideMe(lineNumber)){
-				if(p4Ir.length() < tmpMin){
-					tmpMin = p4Ir.length();
-					tmpP4Ir = p4Ir;
-				}	
-			}
-		}
+		logInfo("auto: " + p.toString());
 
-		if(tmpP4Ir){
-			logInfo("I'm not empty: " + tmpP4Ir);
-		}else{
-			logInfo("not found: " + lineNumber);
-		}
-		
 		return [];
-	}
-
-	private sym_add(p: P4IR): void {
-		// TODO
-		this.SYMBOL_ARR.push(p);
 	}
 
 	add_attr(name: string, attr: Attribute): void{
@@ -55,7 +37,7 @@ export class SymbolTable{
 		let p: P4IR = this.SYMBOL_STACK.peek();
 		let newP: P4IR = new P4IR(type, p, ctx);
 		this.SYMBOL_STACK.push(newP);
-		this.sym_add(newP);
+		this.SYMBOL_ARR.add(newP);
 
 		return newP;
 	}
