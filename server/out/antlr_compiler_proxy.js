@@ -8,14 +8,17 @@ const tree_1 = require("antlr4/tree");
 const server_1 = require("./server");
 const antlr_error_listner_1 = require("./antlr_error_listner");
 const my_p4_listener_1 = require("./compiler/my_p4_listener");
+exports.MY_LISTENER = null;
 function sendToAntlrCompiler(textDocument) {
     logger_1.logDebugT("Compile request to ANTLR4 compiler.....");
     let errorListener = new antlr_error_listner_1.MyErrorListner(textDocument);
     let tree = setupLexerAndParser(textDocument, errorListener);
     try {
-        tree_1.ParseTreeWalker.DEFAULT.walk(new my_p4_listener_1.MyP4Listener(), tree);
+        tree_1.ParseTreeWalker.DEFAULT.walk(exports.MY_LISTENER, tree);
     }
-    catch (e) { }
+    catch (e) {
+        logger_1.logError("Compile Error: " + e);
+    }
     logger_1.logDebugT("ANTLR compiler Finished!");
     if (!errorListener.isEmpty()) {
         let diagnostics = errorListener.getDiagnostics();
@@ -24,6 +27,8 @@ function sendToAntlrCompiler(textDocument) {
 }
 exports.sendToAntlrCompiler = sendToAntlrCompiler;
 function setupLexerAndParser(textDocument, errorListener) {
+    if (exports.MY_LISTENER == null)
+        exports.MY_LISTENER = new my_p4_listener_1.MyP4Listener();
     let input = textDocument.getText();
     let chars = new antlr4_1.InputStream(input);
     let lexer = new P4Lexer_1.P4Lexer(chars);
@@ -33,7 +38,7 @@ function setupLexerAndParser(textDocument, errorListener) {
     parser.removeErrorListeners(); // Remove default ConsoleErrorListener
     parser.addErrorListener(errorListener); // Add custom error listener
     parser.buildParseTrees = true;
-    let tree = parser.input();
+    let tree = parser.program();
     return tree;
 }
 //# sourceMappingURL=antlr_compiler_proxy.js.map
