@@ -1,3 +1,4 @@
+// https://github.com/rubyide/vscode-ruby/blob/master/packages/language-server-ruby/src/util/Stack.ts
 export default class Stack<T> {
 	private stack: T[];
 

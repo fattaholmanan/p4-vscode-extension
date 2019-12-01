@@ -3,7 +3,7 @@ import { logDebug, logInfo} from '../utils/logger';
 import { P4IRTypes } from './p4_ir_types';
 import { SymbolTable } from './symbol_table';
 import { Attribute } from './p4_ir';
-import { TextDocumentPositionParams, CompletionItem } from 'vscode-languageserver';
+import { TextDocumentPositionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 
 export class MyP4Listener extends P4Listener{
 	private sTable: SymbolTable;
@@ -19,7 +19,7 @@ export class MyP4Listener extends P4Listener{
 	}
 
 	enterProgram(ctx){
-		this.sTable.push(ctx, P4IRTypes.P4_PROGRAM);
+		this.sTable.push(ctx, P4IRTypes.P4_PROGRAM, null);
 	}
 
 	exitProgram(ctx){
@@ -27,7 +27,10 @@ export class MyP4Listener extends P4Listener{
 	}
 
 	enterTableDeclaration(ctx){
-		this.sTable.push(ctx, P4IRTypes.TABLE);
+		let attr: Attribute | null = null;
+		if(ctx.name() != null)
+			attr = new Attribute(ctx.name().getText(), P4IRTypes.TABLE, CompletionItemKind.Class, ctx);
+		this.sTable.push(ctx, P4IRTypes.TABLE, attr);
 	}
 
 	exitTableDeclaration(ctx){
@@ -37,14 +40,14 @@ export class MyP4Listener extends P4Listener{
 	enterConstantDeclaration(ctx) {
 		let name: string = ctx.name().getText();
 		let type: string = ctx.typeRef().getText();
-		let attr: Attribute = new Attribute(name, type, ctx);
-		this.sTable.add_attr(name, attr);
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Constant , ctx);
+		this.sTable.add_attr(attr);
 	}
 
 	enterParameter(ctx) {
 		let name: string = ctx.name().getText();
 		let type: string = ctx.typeRef().getText();
-		let attr: Attribute = new Attribute(name, type, ctx);
-		this.sTable.add_attr(name, attr);
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable, ctx);
+		this.sTable.add_attr(attr);
 	}
 }

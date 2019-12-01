@@ -3,7 +3,7 @@ import { logDebug, logInfo, logError} from '../utils/logger';
 import Stack from '../utils/stack';
 import { P4IR, Attribute } from './p4_ir';
 import { P4IRTypes } from './p4_ir_types';
-import { TextDocumentPositionParams, CompletionItem } from 'vscode-languageserver';
+import { TextDocumentPositionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 import IntervalDS from '../utils/interval_ds';
 
 export class SymbolTable{
@@ -15,27 +15,30 @@ export class SymbolTable{
 		this.SYMBOL_ARR = new IntervalDS();
 	}
 
-	getAutoCompletion(keyword: string, pos: TextDocumentPositionParams): CompletionItem[] {
+	getAutoCompletion(keyword: string | null, pos: TextDocumentPositionParams): CompletionItem[] {
 		logDebug("keyword: " + keyword);
+
 		let lineNumber: number = pos.position.line;
-		let p: P4IR | [P4IR, number] = this.SYMBOL_ARR.get(lineNumber);
-
-		logInfo("auto: " + p.toString());
-
-		return [];
+		let p4Ir: P4IR = this.SYMBOL_ARR.get(lineNumber);
+		return p4Ir.getAttr(keyword);
 	}
 
-	add_attr(name: string, attr: Attribute): void{
+	add_attr(attr: Attribute): void{
 		let topTable:P4IR = this.SYMBOL_STACK.peek();
 		if(topTable)
-			this.SYMBOL_STACK.peek().add(name, attr);
+			this.SYMBOL_STACK.peek().add(attr);
 		else
 			logError("Error: Symbole table is null!");
 	}
 
-	push(ctx, type: P4IRTypes): P4IR {
-		let p: P4IR = this.SYMBOL_STACK.peek();
-		let newP: P4IR = new P4IR(type, p, ctx);
+	push(ctx, type: P4IRTypes, attr: Attribute | null): P4IR {
+		let parent: P4IR = this.SYMBOL_STACK.peek();
+		let newP: P4IR = new P4IR(type, parent, ctx);
+		if(attr != null){
+			parent.add(attr);
+		}
+
+
 		this.SYMBOL_STACK.push(newP);
 		this.SYMBOL_ARR.add(newP);
 

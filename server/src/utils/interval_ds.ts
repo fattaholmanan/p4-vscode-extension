@@ -20,8 +20,12 @@ export default class IntervalDS {
 		}
 	}
 
-	get(line: number): P4IR | [P4IR, number] {
-		return this.intervals.get(line).pop(true);
+	get(line: number): P4IR {
+		let p: P4IR | [P4IR, number] = this.intervals.get(line).pop(true);
+		if(p instanceof P4IR)
+			return p;
+		else
+			return p[0];
 	}
 
 	length(): number {

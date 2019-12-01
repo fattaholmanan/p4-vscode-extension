@@ -2,6 +2,7 @@ import { P4IRTypes } from './p4_ir_types' ;
 import { debuglog } from 'util';
 import { logInfo } from '../utils/logger';
 import { Node } from 'ts-pq';
+import { CompletionItem, CompletionItemKind, MarkupContent } from 'vscode-languageserver';
 
 export class P4IR implements Node {
 	private attributes: Map<string, Attribute> = new Map();
@@ -23,14 +24,39 @@ export class P4IR implements Node {
 		return this.ctx;
 	}
 
-	/** start line */
 	startLine(): number {
 		return this.x;
 	}
 
-	/** end line */
 	endLine(): number {
 		return this.y;
+	}
+
+	getAttr(keyword: string): CompletionItem[] {
+		let attrArr: Attribute[];
+		if(keyword == null){
+			attrArr = this._matchAttrAny();
+		}else
+			attrArr = this._matchAttrName(keyword);
+		return attrArr;
+	}
+
+	private _matchAttrName(keyword: string): Attribute[] {
+		throw new Error('Method not implemented.');
+	}
+
+	private _matchAttrAny(): Attribute[] {
+		let arr: Attribute[] = [];
+		let p4Ir: P4IR = this;
+
+		while(true){
+			for(let attr of this.attributes.values())
+				arr.push(attr);
+			if(p4Ir.type == P4IRTypes.P4_PROGRAM)
+				break;
+			p4Ir = p4Ir.parent;
+		}
+		return arr;
 	}
 
 	length(): number {
@@ -41,8 +67,8 @@ export class P4IR implements Node {
 		return lineNumber >= this.startLine() && lineNumber <= this.endLine();
 	}
 
-	add(name: string, attr: Attribute): void{
-		this.attributes.set(name, attr);
+	add(attr: Attribute): void{
+		this.attributes.set(attr.label, attr);
 	}
 
 	toString():string {
@@ -52,19 +78,23 @@ export class P4IR implements Node {
 	}
 }
 
-export class Attribute {
-	name: string;
-	type: string;
-	ctx;
+export class Attribute implements CompletionItem{
+	label: string;
+	detail: string;
+	documentation?: string | MarkupContent;
+	kind: CompletionItemKind;
+	private ctx;
+	
+	constructor(name: string, type: string, kind: CompletionItemKind, ctx){
+		this.label = name;
+		this.detail = type;
+		this.kind = kind;
 
-	constructor(name: string, type: string, ctx){
-		this.name = name;
-		this.type = type;
 		this.ctx = ctx;
 	}
 
 	toString(){
-		return this.name;
+		return this.label;
 	}
 	
 }
