@@ -9,6 +9,7 @@ export class MyErrorListner extends ErrorListener {
 	constructor(text: TextDocument){
 		super();
 		this.textDocument = text;
+		this.diagnostics = [];
 	}
 
 	isEmpty(): boolean {

@@ -29,12 +29,12 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 	} catch(e){
 		logError("Compile Error: " + e);
 	}
-
 	logDebugT("ANTLR compiler Finished!");
 
+	let diagnostics: Diagnostic[] = errorListener.getDiagnostics();
+	p4ExtensionServer.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 	if(!errorListener.isEmpty()){
-		let diagnostics: Diagnostic[] = errorListener.getDiagnostics();
-		p4ExtensionServer.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		logInfo("Syntax Errors are Found!");
 	}
 }
 

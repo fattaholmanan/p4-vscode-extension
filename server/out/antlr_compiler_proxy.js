@@ -21,9 +21,10 @@ function sendToAntlrCompiler(textDocument) {
         logger_1.logError("Compile Error: " + e);
     }
     logger_1.logDebugT("ANTLR compiler Finished!");
+    let diagnostics = errorListener.getDiagnostics();
+    server_1.p4ExtensionServer.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
     if (!errorListener.isEmpty()) {
-        let diagnostics = errorListener.getDiagnostics();
-        server_1.p4ExtensionServer.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+        logger_1.logInfo("Syntax Errors are Found!");
     }
 }
 exports.sendToAntlrCompiler = sendToAntlrCompiler;
