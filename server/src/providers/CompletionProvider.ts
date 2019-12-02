@@ -20,7 +20,7 @@ function findkeywordByPosition(text: string, pos: number): string | null{
 	let firstPart: string = text.substring(0, pos);
 	let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
 	let lastLine: string = lines[lines.length - 1];
-	let keywordArr: string[] = /([a-zA-Z]+[0-9]*\.)+([a-zA-Z]+[0-9]*)?(?=$)/.exec(lastLine);
+	let keywordArr: string[] = /([a-zA-Z_]+[0-9]*\.)+([a-zA-Z_]+[0-9]*)?(?=$)/.exec(lastLine);
 	if(keywordArr != null){
 		let keyword: string = keywordArr[0];
 		return keyword;
