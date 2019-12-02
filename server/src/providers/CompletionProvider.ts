@@ -15,13 +15,16 @@ export function completionProvider(_textDocumentPosition: TextDocumentPositionPa
 }
 
 function findkeywordByPosition(text: string, pos: number): string | null{
-	let firstPart:string = text.substring(0, pos);
+	let firstPart: string = text.substring(0, pos);
 	let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
 	let lastLine: string = lines[lines.length - 1];
-	let keywordArr = /[a-zA-Z]+[0-9]*\.(?!.*\..*)/.exec(lastLine);
+	let keywordArr: string[] = /([a-zA-Z]+[0-9]*\.)+([a-zA-Z]+[0-9]*)?(?=$)/.exec(lastLine);
 	let keyword: string = "";
+
+	logDebug("keyArr: " + keywordArr);
+
 	if(keywordArr != null){
-		keyword = keywordArr[0].substr(0,keywordArr[0].length - 1);
+		keyword = keywordArr[0];
 		return keyword;
 	}
 	return null;

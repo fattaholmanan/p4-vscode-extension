@@ -4,6 +4,7 @@ import { P4IRTypes } from './p4_ir_types';
 import { SymbolTable } from './symbol_table';
 import { Attribute } from './p4_ir';
 import { TextDocumentPositionParams, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { getName } from '../antlr_compiler_proxy';
 
 export class MyP4Listener extends P4Listener{
 	private sTable: SymbolTable;
@@ -15,7 +16,16 @@ export class MyP4Listener extends P4Listener{
 	}
 
 	getAutoCompletions(keyword: string | null, pos: TextDocumentPositionParams): CompletionItem[] {
+		// TODO: hot keyword to be shown in the top of the list
 		return this.sTable.getAutoCompletion(keyword, pos);
+	}
+
+	pushBlock(type: P4IRTypes, ctx){
+		let attr: Attribute | null = null;
+		let name: string | null  = getName(ctx);
+		if(name != null)
+			attr = new Attribute(name , type, CompletionItemKind.Class, ctx);
+		this.sTable.push(ctx, type, attr);
 	}
 
 	enterProgram(ctx){
@@ -27,20 +37,40 @@ export class MyP4Listener extends P4Listener{
 	}
 
 	enterTableDeclaration(ctx){
-		let attr: Attribute | null = null;
-		if(ctx.name() != null)
-			attr = new Attribute(ctx.name().getText(), P4IRTypes.TABLE, CompletionItemKind.Class, ctx);
-		this.sTable.push(ctx, P4IRTypes.TABLE, attr);
+		this.pushBlock(P4IRTypes.TABLE, ctx);
 	}
 
 	exitTableDeclaration(ctx){
 		this.sTable.pop();
 	}
 
+	enterControlDeclaration(ctx){
+		this.pushBlock(P4IRTypes.CONTROLLER, ctx);
+	}
+
+	exitControlDeclaration(ctx){
+		this.sTable.pop();
+	}
+
+	enterActionDeclaration(ctx){
+		this.pushBlock(P4IRTypes.ACTION, ctx);
+	}
+
+	exitActionDeclaration(ctx){
+		this.sTable.pop();
+	}
+
 	enterConstantDeclaration(ctx) {
-		let name: string = ctx.name().getText();
+		let name: string | null  = getName(ctx);
 		let type: string = ctx.typeRef().getText();
 		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Constant , ctx);
+		this.sTable.add_attr(attr);
+	}
+
+	enterVariableDeclaration(ctx){
+		let name: string | null  = getName(ctx);
+		let type: string = ctx.typeRef().getText();
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable , ctx);
 		this.sTable.add_attr(attr);
 	}
 
@@ -50,4 +80,6 @@ export class MyP4Listener extends P4Listener{
 		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable, ctx);
 		this.sTable.add_attr(attr);
 	}
+
+
 }
