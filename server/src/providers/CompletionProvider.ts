@@ -1,4 +1,4 @@
-import { TextDocumentPositionParams, TextDocument, CompletionItem } from 'vscode-languageserver';
+import { TextDocumentPositionParams, TextDocument, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
 import { p4ExtensionServer } from '../server';
 import { logDebug } from '../utils/logger';
 import { MY_LISTENER } from '../antlr_compiler_proxy';
@@ -8,10 +8,12 @@ export function completionProvider(_textDocumentPosition: TextDocumentPositionPa
 	let _position = textDocument.offsetAt(_textDocumentPosition.position);
 	let text: string = textDocument.getText();
 	let keyword: string = findkeywordByPosition(text, _position);
-
-	MY_LISTENER.getAutoCompletions(keyword, _textDocumentPosition);
-
-	return [];//p4Program.getAutoCompletion(keyword);
+	
+	let items: CompletionItem[] = MY_LISTENER.getAutoCompletions(keyword, _textDocumentPosition);
+	for(let item of items){
+		logDebug("item: " + item);
+	}
+	return items; 
 }
 
 function findkeywordByPosition(text: string, pos: number): string | null{
@@ -19,12 +21,8 @@ function findkeywordByPosition(text: string, pos: number): string | null{
 	let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
 	let lastLine: string = lines[lines.length - 1];
 	let keywordArr: string[] = /([a-zA-Z]+[0-9]*\.)+([a-zA-Z]+[0-9]*)?(?=$)/.exec(lastLine);
-	let keyword: string = "";
-
-	logDebug("keyArr: " + keywordArr);
-
 	if(keywordArr != null){
-		keyword = keywordArr[0];
+		let keyword: string = keywordArr[0];
 		return keyword;
 	}
 	return null;

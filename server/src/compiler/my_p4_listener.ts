@@ -22,9 +22,15 @@ export class MyP4Listener extends P4Listener{
 
 	pushBlock(type: P4IRTypes, ctx){
 		let attr: Attribute | null = null;
-		let name: string | null  = getName(ctx);
+		let name: string | null;
+
+		if(typeof ctx.name === "function" && ctx.name() != null)
+			name = ctx.name().getText();
+		else
+			name = getName(ctx);
+
 		if(name != null)
-			attr = new Attribute(name , type, CompletionItemKind.Class, ctx);
+			attr = new Attribute(name , type, CompletionItemKind.Class);
 		this.sTable.push(ctx, type, attr);
 	}
 
@@ -60,26 +66,48 @@ export class MyP4Listener extends P4Listener{
 		this.sTable.pop();
 	}
 
+	enterHeaderTypeDeclaration(ctx){
+		let name: string = getName(ctx);
+		this.pushBlock(P4IRTypes.HEADER, ctx);
+	}
+
+	exitHeaderTypeDeclaration(ctx){
+		this.sTable.pop();
+	}
+
+	enterStructTypeDeclaration(ctx){
+		this.pushBlock(P4IRTypes.STRUCT, ctx);
+	}
+
+	exitStructTypeDeclaration(ctx){
+		this.sTable.pop();
+	}
+
 	enterConstantDeclaration(ctx) {
 		let name: string | null  = getName(ctx);
 		let type: string = ctx.typeRef().getText();
-		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Constant , ctx);
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Constant);
 		this.sTable.add_attr(attr);
 	}
 
 	enterVariableDeclaration(ctx){
 		let name: string | null  = getName(ctx);
 		let type: string = ctx.typeRef().getText();
-		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable , ctx);
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable);
 		this.sTable.add_attr(attr);
 	}
 
 	enterParameter(ctx) {
 		let name: string = ctx.name().getText();
 		let type: string = ctx.typeRef().getText();
-		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable, ctx);
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Variable);
 		this.sTable.add_attr(attr);
 	}
 
-
+	enterStructField(ctx){
+		let name: string = ctx.name().getText();
+		let type: string = ctx.typeRef().getText();
+		let attr: Attribute = new Attribute(name, type, CompletionItemKind.Field);
+		this.sTable.add_attr(attr);
+	}
 }

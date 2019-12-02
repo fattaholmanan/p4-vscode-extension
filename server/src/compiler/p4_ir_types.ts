@@ -4,5 +4,6 @@ export enum P4IRTypes {
 	TABLE = "TABLE",
 	VAR = "VARIABLE",
 	P4_PROGRAM = "P4_PROGRAM",
-	ACTION = "ACTION"
+	ACTION = "ACTION",
+	STRUCT = "STRUCT"
 }

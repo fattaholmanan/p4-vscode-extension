@@ -20,7 +20,7 @@ export class SymbolTable{
 
 		let lineNumber: number = pos.position.line;
 		let p4Ir: P4IR = this.SYMBOL_ARR.get(lineNumber);
-		return p4Ir.getAttr(keyword);
+		return p4Ir.getAutoCompletion(keyword);
 	}
 
 	add_attr(attr: Attribute): void{
@@ -36,12 +36,11 @@ export class SymbolTable{
 		let newP: P4IR = new P4IR(type, parent, ctx);
 		if(attr != null){
 			parent.add(attr);
+			attr.setP4Ir(newP);
 		}
-
-
+		
 		this.SYMBOL_STACK.push(newP);
 		this.SYMBOL_ARR.add(newP);
-
 		return newP;
 	}
 
