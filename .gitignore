@@ -4,7 +4,6 @@ node_modules/
 out/
 dist/
 npm-debug.log
-*.vsix
 *.zip
 *.tar.gz
 .nyc_output
