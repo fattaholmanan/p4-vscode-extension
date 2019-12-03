@@ -1,7 +1,5 @@
 **/.DS_Store
 **/._.DS_Store
-p4src_example
-p4src_example/*
 node_modules/
 out/
 dist/
