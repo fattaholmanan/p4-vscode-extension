@@ -9,7 +9,7 @@ This repo contains the Visual Studio P4_16 Extension.
  authentication for access control),
 - Snippet for basic code structures, like tables.
 
-## Open project used in this project
+## Open source projects used in this extension
 - [Antlr (ANother Tool for Language Recognition)](https://www.antlr.org) is a
  powerful parser generator for reading, processing, executing or translating
  structured text or binary files. To this end, the referenced lex/yacc P4
