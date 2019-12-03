@@ -47,9 +47,6 @@ header ethernet_t {
 	bit<16>   etherType;
 }
 
-@HeaderConfig(
-	visiable="name/read",
-)
 header ipv4_t {
 	bit<4>	version;
 	bit<4>	ihl;
