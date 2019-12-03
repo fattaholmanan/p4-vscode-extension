@@ -1,4 +1,4 @@
-import {
+/* import {
 	TextDocument,
 	Diagnostic,
 	DiagnosticSeverity,
@@ -76,4 +76,6 @@ export function getName(ctx) {
 	}
 	return nameListener.getName();
 }
+
+*/
 
