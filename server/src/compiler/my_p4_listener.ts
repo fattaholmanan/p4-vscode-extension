@@ -30,7 +30,7 @@ export class MyP4Listener extends P4Listener{
 			name = getName(ctx);
 
 		if(name != null)
-			attr = new Attribute(name , type, CompletionItemKind.Class);
+			attr = new Attribute(name , name, CompletionItemKind.Class);
 		return this.sTable.push(ctx, type, attr);
 	}
 
@@ -44,7 +44,7 @@ export class MyP4Listener extends P4Listener{
 
 	enterTableDeclaration(ctx){
 		let p:P4IR = this.pushBlock(P4IRTypes.TABLE, ctx);
-		let helperField: Attribute = new Attribute("apply", "method", CompletionItemKind.Function);
+		let helperField: Attribute = new Attribute("apply()", "method", CompletionItemKind.Function);
 		p.add(helperField);
 	}
 
@@ -53,7 +53,9 @@ export class MyP4Listener extends P4Listener{
 	}
 
 	enterControlDeclaration(ctx){
-		this.pushBlock(P4IRTypes.CONTROLLER, ctx);
+		let p:P4IR = this.pushBlock(P4IRTypes.CONTROLLER, ctx);
+		let helperField: Attribute = new Attribute("apply()", "method", CompletionItemKind.Function);
+		p.add(helperField);
 	}
 
 	exitControlDeclaration(ctx){

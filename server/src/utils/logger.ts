@@ -12,11 +12,11 @@ export function log(msg:string, mode:LOGGER_MODE){
 }
 
 export function logInfo(msg:string){
-	log(msg, LOGGER_MODE.INFO);
+	// log(msg, LOGGER_MODE.INFO);
 }
 
 export function logDebug(msg:string){
-	log(msg, LOGGER_MODE.DEBUG);
+	// log(msg, LOGGER_MODE.DEBUG);
 }
 
 export function logError(msg:string){
@@ -27,5 +27,5 @@ export function logDebugT(msg:string){
 	let t:Date = new Date();
 	let time:string = "[" + t.getHours() + ":" + t.getMinutes() + ":" + t.getSeconds() + "." + Date.now()%1000 + "]  ";
 
-	log(time + msg, LOGGER_MODE.DEBUG);
+	logDebug(time + msg);
 }

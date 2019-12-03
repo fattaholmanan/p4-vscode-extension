@@ -49,9 +49,7 @@ export class P4IR implements Node {
 		let p4Ir: P4IR = this;
 		for(let i = 0; i < keyArr.length; i++){
 			let varName: string = keyArr[i];
-			logDebug("Looking for: " + varName);
-			logDebug("looking in: " + p4Ir);
-
+			logDebug("**********");
 
 			if(varName.trim().length == 0)
 				break;
@@ -61,8 +59,19 @@ export class P4IR implements Node {
 			}
 			let varAttr: Attribute = p4Ir.findType(varName);
 			let varBlck: P4IR = varAttr.getParent();
+
+			logDebug("look: " + varAttr.getVarType());
+			logDebug("in: " + varBlck);
+
 			let varType = varBlck.findType(varAttr.getVarType());
+
+			if(varType == null){
+				logDebug("something went wrong!");
+				break;
+			}
+
 			p4Ir = varType.getP4Ir();
+			logDebug("**********");
 		}
 		return p4Ir._getAttributesArray();
 	}
