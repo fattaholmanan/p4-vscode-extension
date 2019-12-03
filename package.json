@@ -1,7 +1,7 @@
 {
 	"name": "p4-compiler",
 	"displayName": "P4 Network Extension",
-	"description": "A language server for P4",
+	"description": "A language server for P4_16",
 	"author": "Ali Fattaholmanan",
 	"license": "",
 	"version": "0.0.8",
@@ -105,8 +105,7 @@
 			},
 			{
 				"command": "p4Extension.Compile",
-				"title": "P4 Extension | Compile and Download",
-				"icon": "./icons/cisco.png"
+				"title": "P4 Extension | Compile and Download"
 			},
 			{
 				"command": "p4Extension.refreshHeaderView",
