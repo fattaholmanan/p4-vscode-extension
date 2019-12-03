@@ -46,6 +46,7 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 	var symTableStack = SymbolTableStack();
 
 	var typeDefMap = new Map();
+
 	//types to size
 	//type myTypeA int16
 	//type myTypeB -> myTypeA
@@ -53,9 +54,29 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 
 	//prepopulate with all the built in types
 
+	const kvPairs = {
+		'id': null,
+		'TreeNode': null
+	};
 
+	const findSize = {
+		'multiplier': 0,
+		'size': 0
+	};
+
+
+	var maxSize = {
+		'max': 0
+	};
+
+	var p4KeywordList = [
+		"drop"
+	];
 	//ERROR FUNCTIONS
-	function undefVarAlert(value){
+	function undefVarAlert(value, arr){
+		if (arr.includes(value)){
+			return;
+		}
 		logloglog("--->Error: undefined variable \"" + value + "\"");
 	}
 
@@ -76,39 +97,35 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 		MyP4Listner.prototype.constructor = MyP4Listner;
 		
 		function addSymbolTableEntry(stack, id, entry) {
-			logloglog("identifier: " + id);
-			logloglog("entry: " + entry.getText());
-			logloglog("stack height: " + stack.height());
+			// logloglog("identifier: " + id);
+			// logloglog("entry: " + entry.getText());
+			// logloglog("stack height: " + stack.height());
 			stack.set(id, entry); 
 		}
 
 
+		//for testing purposes 
+		//logloglog("kvPairs.id = " + kvPairs.id + " kvPairs.TreeNode = " + kvPairs.TreeNode.getText());
 
 		//CONSTANT DECLARATION
-
 		MyP4Listner.prototype.enterConstantDeclaration = function(ctx) {
 			var id = ctx.getChild(3).getText();
 			var entry = ctx;
-			addSymbolTableEntry(symTableStack, id, ctx);
+			//addSymbolTableEntry(symTableStack, id, ctx);
 		};
 
-
-		// ***		type declaration
-		MyP4Listner.prototype.enterTypeDeclaration = function(ctx) {
-			MyP4Listner.prototype.enterTypedefDeclaration = function(ctx) {
-				//I'm only going to store the size of the type def, ie typedef bit<99> will only store 99
-				var id = ctx.getChild(3).getText(); //in grammar, name is 4th value in every case
-				MyP4Listner.prototype.enterBaseType = function(ctx) {
-					var bits = ctx.getChild(2).getText(); 	//nodes are 'bit' '<' 'int' '>'
-					logloglog("key: " + id + " value: " + bits);	//logging to show
-					typeDefMap.set(id, bits);
-				};
-			};
+		//EXTERN DECLARATION
+		P4Listener.prototype.enterExternDeclaration = function(ctx) {
+			kvPairs.id = ctx.getChild(2).getText();
+			kvPairs.TreeNode = ctx;
+			//addSymbolTableEntry(symTableStack, kvPairs.id, kvPairs.TreeNode);
+			symTableStack.push();
 		};
-
+		P4Listener.prototype.exitExternDeclaration = function(ctx) {
+			symTableStack.pop();
+		};
 
 		//ACTION DECLARATION
-
 		P4Listener.prototype.enterActionDeclaration = function(ctx) {
 			var id = ctx.getChild(2).getText();
 			addSymbolTableEntry(symTableStack, id, ctx);	//adding entire node
@@ -120,26 +137,35 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 		};
 
 		//PARSER DECLARATION
-
-		// Enter a parse tree produced by P4Parser#parserDeclaration.
 		P4Listener.prototype.enterParserDeclaration = function(ctx) {
+		//	logloglog("entering parser");
+			kvPairs.TreeNode = ctx;
 			P4Listener.prototype.enterParserTypeDeclaration = function(ctx) {
-				
-			};
-			// Exit a parse tree produced by P4Parser#parserTypeDeclaration.
-			P4Listener.prototype.exitParserTypeDeclaration = function(ctx) {
+				kvPairs.id = ctx.getChild(2).getText();
+			//	addSymbolTableEntry(symTableStack, kvPairs.id, kvPairs.TreeNode);
+				symTableStack.push();
 			};
 		};
-		// Exit a parse tree produced by P4Parser#parserDeclaration.
 		P4Listener.prototype.exitParserDeclaration = function(ctx) {
+			symTableStack.pop();
 		};
 
 
+		//TYPE DECLARATION
+		MyP4Listner.prototype.enterTypeDeclaration = function(ctx) {
+			MyP4Listner.prototype.enterTypedefDeclaration = function(ctx) {
+				//I'm only going to store the size of the type def, ie typedef bit<99> will only store 99
+				var id = ctx.getChild(3).getText(); //in grammar, name is 4th value in every case
+				MyP4Listner.prototype.enterBaseType = function(ctx) {
+					var bits = ctx.getChild(2).getText(); 	//nodes are 'bit' '<' 'int' '>'
+					//logloglog("key: " + id + " value: " + bits);	//logging to show
+					typeDefMap.set(id, bits);
+				};
+			};
+		};
 
 
 		// CONTROL DECLARATION
-
-
 		MyP4Listner.prototype.enterControlDeclaration = function(ctx) {
 			var id = ctx.getChild(0).getText();
 			var entry = ctx;
@@ -151,12 +177,9 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 			symTableStack.pop();  
 		};
 		
-
-		//TABLE DEC
-
-		// Enter a parse tree produced by P4Parser#tableDeclaration.
+		//---TABLE DECLARATION
 		MyP4Listner.prototype.enterTableDeclaration = function(ctx) {
-			logloglog("enter table");
+			//logloglog("enter tabler");
 			var id = ctx.getChild(2).getText();
 			var entry = ctx;
 			addSymbolTableEntry(symTableStack, id, ctx);
@@ -166,7 +189,112 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 		MyP4Listner.prototype.exitTableDeclaration = function(ctx) {
 			symTableStack.pop();  
 		};
-	
+
+
+		//INSTANTIATION
+		P4Listener.prototype.enterInstantiation = function(ctx) {
+			//Also ask professor Soule to explain this
+			//logloglog("entering instantiation");
+		};
+		
+		P4Listener.prototype.exitInstantiation = function(ctx) {
+		};
+
+		//ERROR DECLARATION
+		P4Listener.prototype.enterErrorDeclaration = function(ctx) {
+			kvPairs.id = ctx.getChild(0).getText(0);
+			kvPairs.TreeNode = ctx;
+			addSymbolTableEntry(symTableStack, kvPairs.id, kvPairs.TreeNode);
+			symTableStack.push();
+		};
+
+		P4Listener.prototype.exitErrorDeclaration = function(ctx) {
+			symTableStack.pop();
+		};
+
+		//MATCH_KIND DECLARATION
+		P4Listener.prototype.enterMatchKindDeclaration = function(ctx) {
+		//	logloglog("enteringMatchkind");
+		//	logloglog(ctx.getText());
+			kvPairs.id = ctx.getChild(0).getText(0);
+			kvPairs.TreeNode = ctx;
+			addSymbolTableEntry(symTableStack, kvPairs.id, kvPairs.TreeNode);
+			symTableStack.push();
+		};
+
+		P4Listener.prototype.exitMatchKindDeclaration = function(ctx) {
+			symTableStack.pop();
+		};
+		
+		//FUNCTION DECLARATION
+		P4Listener.prototype.enterFunctionDeclaration = function(ctx) {
+			// //ASK PROF SOULE
+			// logloglog("enteringFunctionDeclaration");
+			// logloglog(ctx.getChild(0).getText());
+			kvPairs.TreeNode = ctx;
+		};
+
+		P4Listener.prototype.exitFunctionDeclaration = function(ctx) {
+		};
+
+
+		//HEADER DECLARATION
+		P4Listener.prototype.enterHeaderTypeDeclaration = function(ctx) {
+			var id = ctx.getChild(2).getText();
+			var values = (ctx.getChild(4));
+			typeDefMap.set(id, values);
+
+			//"name" -> struct
+			var type = ctx.getChild(1).getText();
+			var name = ctx.getChild(2).getText();
+			typeDefMap.set(name, type);
+			logloglog("entering: " + name + " with type: " + type);
+			logloglog("entering: " + id + " with values: " + values.getText());
+			P4Listener.prototype.enterStructFieldList = function(ctx) {
+				P4Listener.prototype.enterStructField = function(ctx) {
+					var id2 = ctx.getChild(2).getText();
+					MyP4Listner.prototype.enterBaseType = function(ctx) {
+						var bits = (ctx.getChild(2).getText()); 	//nodes are 'bit' '<' 'int' '>'
+						typeDefMap.set(id, bits);
+						logloglog("entering: " + id2 + " with bits: " + bits);
+					};
+				};
+			};
+		};
+
+		//STRUCT DECLARATION
+		// Enter a parse tree produced by P4Parser#structTypeDeclaration.
+		P4Listener.prototype.enterStructTypeDeclaration = function(ctx) {
+			var id = ctx.getChild(2).getText();
+			var values = ctx.getChild(4);
+			typeDefMap.set(id, values);
+
+			//"name" -> struct
+			var type = ctx.getChild(1).getText();
+			var name = ctx.getChild(2).getText();
+			typeDefMap.set(name, type);
+			logloglog("entering: " + id + " with values: " + values.getText());
+			logloglog("entering: " + name + " with type: " + type);
+			P4Listener.prototype.enterStructFieldList = function(ctx) {
+				P4Listener.prototype.enterStructField = function(ctx) {
+					var id2 = ctx.getChild(2).getText();
+					MyP4Listner.prototype.enterBaseType = function(ctx) {
+						var bits = (ctx.getChild(2).getText()); 	//nodes are 'bit' '<' 'int' '>'
+						typeDefMap.set(id, bits);
+						logloglog("entering: " + id2 + " with bits: " + bits);
+					};
+				};
+			};
+		};
+
+		// Exit a parse tree produced by P4Parser#structTypeDeclaration.
+		P4Listener.prototype.exitStructTypeDeclaration = function(ctx) {
+		};
+		
+		// Exit a parse tree produced by P4Parser#headerTypeDeclaration.
+		P4Listener.prototype.exitHeaderTypeDeclaration = function(ctx) {
+		};
+
 		var myP4Listner = new MyP4Listner(symTableStack);
 		try{
 			ParseTreeWalker.DEFAULT.walk(myP4Listner, tree);
@@ -190,65 +318,67 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 			return this;
 		};
 
+		// continue inheriting default listener
+		MyP4Listner.prototype = Object.create(P4Listener.prototype);
+		MyP4Listner.prototype.constructor = MyP4Listner;
+
 		// ***		action declaration
-		P4Listener.prototype.enterActionDeclaration = function(ctx) {
+		MyP4Listner.prototype.enterActionDeclaration = function(ctx) {
 			
 			// Enter a parse tree produced by P4Parser#parameterList.
-			P4Listener.prototype.enterParameterList = function(ctx) {
+			MyP4Listner.prototype.enterParameterList = function(ctx) {
 
-				P4Listener.prototype.enterParameter = function(ctx){
+				MyP4Listner.prototype.enterParameter = function(ctx){
 					if (typeDefMap.has(ctx.getChild(2).getText())){	//CAN IMPROVE!!!!!
+
 						logloglog("typedef has: " + ctx.getChild(2).getText());
-						getResources(typeDefMap, ctx.getChild(2).getText());
+						logloglog(typeDefMap.get(ctx.getChild(2).getText()));
+
+						findSize.size += Number(typeDefMap.get(ctx.getChild(2).getText()));
+						//getResources(typeDefMap, ctx.getChild(2).getText());
 					} else {
 						logloglog("not found");
 					}
+
+					if (findSize.size > maxSize.max){
+						maxSize.max = findSize.size;	//in order to ensure the maximum size;
+					}
+					
 				};
 			};
 		};
 
 		MyP4Listner.prototype.exitActionDeclaration = function(ctx) {
-			symTableStack.pop();  
+			findSize.size = 0; //reset findSize
 		};
-
-
-		// continue inheriting default listener
-		MyP4Listner.prototype = Object.create(P4Listener.prototype);
-		MyP4Listner.prototype.constructor = MyP4Listner;
 
 		MyP4Listner.prototype.enterControlDeclaration = function(ctx) {
 			
-			//ASK PROF SOULE ABOUT THE DEPTH HE WANTS!!!!!!!!!!!!
-
 			//code for handling tables
 			MyP4Listner.prototype.enterTableDeclaration = function(ctx){
 
 				MyP4Listner.prototype.enterTableProperty = function(ctx) {
-					logloglog("table property: " + ctx.getText());
-
+					//logloglog("table property: " + ctx.getText());
+					
 					//Only want to get action ref if it's inside table property
 					MyP4Listner.prototype.enterActionRef = function(ctx) {
-						if (populatedSym.getItsHeight(ctx.getText()) == undefined){
-							if (ctx.getText() == "NoAction"){ //if ctx.getText().includes keyword, continue
-								//ask Prof. Soule about this
-									//create a keyword list!!!!!!!!!!! 
-								logloglog("--->OK, I think \"NoAction\" doesn't qualify as a use.");
-							} else {
-								undefVarAlert(ctx.getText());
-							}
+						if (populatedSym.getItsHeight(ctx.getText()) == undefined){		
+							undefVarAlert(ctx.getText(), p4KeywordList);
 						}
+						
 					};
 
 					//Only want Kw names inside of table properties
 					MyP4Listner.prototype.enterNonTableKwName = function(ctx) {
-						logloglog("kwName: " + ctx.getText());
-						P4Listener.prototype.enterInitializer = function(ctx) {
-							logloglog("kwNameValue: " + ctx.getText());
-							//Ask prof soule about drop and how to distinguish it!!!
+						P4Listener.prototype.enterInitializer = function(ctx) {	//Required traversal to get to size
+							if (Number.isInteger(Number(ctx.getText()))){	//change to if kwName belongs to size!!!!!!
+								findSize.multiplier = Number(ctx.getText());	//setting the multiplier for findSize
+							}
 						};
 					};
 				};
 			};
+
 
 			//code for handling apply
 			P4Listener.prototype.enterControlBody = function(ctx) {
@@ -261,7 +391,7 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 
 							P4Listener.prototype.enterConditionalStatement = function(ctx) {
 								//getting deep, ASK PROF SOULE
-								logloglog("apply statement: " + ctx.getText());
+								//logloglog("apply statement: " + ctx.getText());
 							};
 						};
 					};
@@ -269,11 +399,15 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 			};
 		};
 
+		
+
 		var myP4Listner = new MyP4Listner(symTableStack);
 		try{
 			ParseTreeWalker.DEFAULT.walk(myP4Listner, tree);
 		} catch(e){}
 		//return "no errors";
+
+		logloglog("TOTAL RESOURCES: " + findSize.multiplier*maxSize.max);
 	}
 
 
@@ -285,23 +419,3 @@ export function sendToAntlrCompiler(textDocument: TextDocument){
 	popSym(); //executing symbol table population
 	checkSym(symTableStack);	//executing symbol table checking
 }
-	
-/*	I want to save this
-
-
-	var symTablePass = new SymbolTablePass(symTableStack);
-	
-	ParseTreeWalker.DEFAULT.walk(symTablePass, tree);
-	try{
-		//ParseTreeWalker.DEFAULT.walk(symTablePass, tree);	
-	} catch(e){}
-
-	var symTableCheck = new SymbolTableCheck(symTableStack);
-	ParseTreeWalker.DEFAULT.walk(symTableCheck, tree);	
-	try{
-		//ParseTreeWalker.DEFAULT.walk(symTableCheck, tree);
-	} catch(e){}
-*/
-
-
-
