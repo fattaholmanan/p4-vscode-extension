@@ -1,6 +1,6 @@
 import { P4IR, Attribute } from '../compiler/p4_ir';
 import { logInfo } from './logger';
-import { PriorityQueue, Node } from 'ts-pq';
+import { PriorityQueue, Node } from './priorityqueue';
 
 
 export default class IntervalDS {
