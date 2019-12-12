@@ -47,12 +47,30 @@ P4Listener.prototype.exitDeclaration = function(ctx) {
 };
 
 
-// Enter a parse tree produced by P4Parser#includeLine.
-P4Listener.prototype.enterIncludeLine = function(ctx) {
+// Enter a parse tree produced by P4Parser#preprocessorLines.
+P4Listener.prototype.enterPreprocessorLines = function(ctx) {
 };
 
-// Exit a parse tree produced by P4Parser#includeLine.
-P4Listener.prototype.exitIncludeLine = function(ctx) {
+// Exit a parse tree produced by P4Parser#preprocessorLines.
+P4Listener.prototype.exitPreprocessorLines = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#preprocessorDirectives.
+P4Listener.prototype.enterPreprocessorDirectives = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#preprocessorDirectives.
+P4Listener.prototype.exitPreprocessorDirectives = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#ppIncludeFileName.
+P4Listener.prototype.enterPpIncludeFileName = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#ppIncludeFileName.
+P4Listener.prototype.exitPpIncludeFileName = function(ctx) {
 };
 
 

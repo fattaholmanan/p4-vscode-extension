@@ -1,4 +1,4 @@
-// Generated from /Users/ali/Desktop/p4-ide/antlr_compiler/grammars/P4.g4 by ANTLR 4.7.2
+// Generated from ./grammar/P4.g4 by ANTLR 4.7.2
 // jshint ignore: start
 var antlr4 = require('antlr4/index');
 
@@ -47,12 +47,30 @@ P4Listener.prototype.exitDeclaration = function(ctx) {
 };
 
 
-// Enter a parse tree produced by P4Parser#includeLine.
-P4Listener.prototype.enterIncludeLine = function(ctx) {
+// Enter a parse tree produced by P4Parser#preprocessorLines.
+P4Listener.prototype.enterPreprocessorLines = function(ctx) {
 };
 
-// Exit a parse tree produced by P4Parser#includeLine.
-P4Listener.prototype.exitIncludeLine = function(ctx) {
+// Exit a parse tree produced by P4Parser#preprocessorLines.
+P4Listener.prototype.exitPreprocessorLines = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#preprocessorDirectives.
+P4Listener.prototype.enterPreprocessorDirectives = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#preprocessorDirectives.
+P4Listener.prototype.exitPreprocessorDirectives = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#ppIncludeFileName.
+P4Listener.prototype.enterPpIncludeFileName = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#ppIncludeFileName.
+P4Listener.prototype.exitPpIncludeFileName = function(ctx) {
 };
 
 
@@ -1106,6 +1124,15 @@ P4Listener.prototype.enterType_or_id = function(ctx) {
 
 // Exit a parse tree produced by P4Parser#type_or_id.
 P4Listener.prototype.exitType_or_id = function(ctx) {
+};
+
+
+// Enter a parse tree produced by P4Parser#parserStateCondition.
+P4Listener.prototype.enterParserStateCondition = function(ctx) {
+};
+
+// Exit a parse tree produced by P4Parser#parserStateCondition.
+P4Listener.prototype.exitParserStateCondition = function(ctx) {
 };
 
 

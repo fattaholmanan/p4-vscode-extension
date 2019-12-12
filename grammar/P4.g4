@@ -20,11 +20,31 @@ declaration
     | errorDeclaration
     | matchKindDeclaration
     | functionDeclaration
-	| includeLine
+	| '#' preprocessorLines
     ;
 
-includeLine
-	: INCLUDE_LINE
+preprocessorLines
+	: preprocessorDirectives
+;
+
+preprocessorDirectives
+	: PREPROC_INCLUDE WS?
+	| PREPROC_INCLUDE WS? ppIncludeFileName
+	| PREPROC_DEFINE
+	| PREPROC_UNDEF
+	| PREPROC_IFDEF
+	| PREPROC_IFNDEF
+	| IF expression
+	| PREPROC_ELSEIF
+	| ELSE
+	| PREPROC_ENDIF
+	;
+
+ppIncludeFileName :
+	| name
+	| name '.' name
+	| '/' ppIncludeFileName
+	| PREPROC_ARG
 	;
 
 nonTypeName
@@ -900,7 +920,16 @@ COMMENT 					: '/*' .*? '*/' -> skip ;
 LINE_COMMENT 				: '//' ~[\r\n]* -> skip ;
 fragment ESCAPED_QUOTE 		: '\\"';
 STRING_LITERAL 				: '"' ( ESCAPED_QUOTE | ~('\n'|'\r') )*? '"';
-INCLUDE_LINE				: '#' WS? 'include' WS? (('"' ~[\r\n]* '"') | ('<' ~[\r\n]* '>' )) WS? '\n';
+
+PREPROC_INCLUDE				: 'include';
+PREPROC_DEFINE				: 'define';
+PREPROC_UNDEF				: 'undef';
+PREPROC_IFDEF				: 'ifdef';
+PREPROC_IFNDEF				: 'ifndef';
+PREPROC_ELSEIF				: 'elseif';
+PREPROC_ENDIF				: 'endif';
+PREPROC_ARG					: (('"' ~[\r\n]* '"') | ('<' ~[\r\n]* '>' ) | WS);
+
 // end of added by Ali
 
 IDENTIFIER					: [A-Za-z_][A-Za-z0-9_]*;
@@ -919,9 +948,9 @@ INTEGER						: HEX_INTEGER
 							| BI_INTEGER_WITH ;
 
 fragment HEX_INTEGER 				: '0'[xX][0-9a-fA-F_]+ ;
-fragment DEC_INTEGER					: '0'[dD][0-9_]+ | [0-9][0-9_]* ;
-fragment OCT_INTEGER					: '0'[oO][0-7_]+ ;
-fragment BI_INTEGER 					: '0'[bB][01_]+ ;
+fragment DEC_INTEGER				: '0'[dD][0-9_]+ | [0-9][0-9_]* ;
+fragment OCT_INTEGER				: '0'[oO][0-7_]+ ;
+fragment BI_INTEGER 				: '0'[bB][01_]+ ;
 fragment HEX_INTEGER_WITH			: [0-9]+[ws]'0'[xX][0-9a-fA-F_]+ ;
 fragment DEC_INTEGER_WITH			: [0-9]+[ws]'0'[dD][0-9_]+ | [0-9]+[ws][0-9_]+;
 fragment OCT_INTEGER_WITH			: [0-9]+[ws]'0'[oO][0-7_]+ ;
