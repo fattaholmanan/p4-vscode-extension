@@ -6,7 +6,7 @@ program : input;
 
 input :  /* epsilon */
 	| input declaration 
-	| input ';' 
+	| input ';'
 	;
 
 declaration
@@ -20,31 +20,31 @@ declaration
     | errorDeclaration
     | matchKindDeclaration
     | functionDeclaration
-	| '#' preprocessorLines
+	| preprocessorLine
     ;
 
-preprocessorLines
-	: preprocessorDirectives
-;
-
-preprocessorDirectives
-	: PREPROC_INCLUDE WS?
-	| PREPROC_INCLUDE WS? ppIncludeFileName
+preprocessorLine
+	: PREPROC_INCLUDE ppIncludeFileName
 	| PREPROC_DEFINE
+	| PREPROC_DEFINE expression expression
 	| PREPROC_UNDEF
 	| PREPROC_IFDEF
 	| PREPROC_IFNDEF
-	| IF expression
+	| PREPROC_IF expression
 	| PREPROC_ELSEIF
-	| ELSE
+	| PREPROC_ELSE
 	| PREPROC_ENDIF
+	| PREPROC_LINE
 	;
 
-ppIncludeFileName :
+ppIncludeFileName 
+	: STRING_LITERAL
+	| '<' ppIncludeFileName '>'
 	| name
 	| name '.' name
+	| './' ppIncludeFileName
+	| '../' ppIncludeFileName
 	| '/' ppIncludeFileName
-	| PREPROC_ARG
 	;
 
 nonTypeName
@@ -921,14 +921,17 @@ LINE_COMMENT 				: '//' ~[\r\n]* -> skip ;
 fragment ESCAPED_QUOTE 		: '\\"';
 STRING_LITERAL 				: '"' ( ESCAPED_QUOTE | ~('\n'|'\r') )*? '"';
 
-PREPROC_INCLUDE				: 'include';
-PREPROC_DEFINE				: 'define';
-PREPROC_UNDEF				: 'undef';
-PREPROC_IFDEF				: 'ifdef';
-PREPROC_IFNDEF				: 'ifndef';
-PREPROC_ELSEIF				: 'elseif';
-PREPROC_ENDIF				: 'endif';
-PREPROC_ARG					: (('"' ~[\r\n]* '"') | ('<' ~[\r\n]* '>' ) | WS);
+PREPROC_INCLUDE				: '#include';
+PREPROC_DEFINE				: '#define';
+PREPROC_UNDEF				: '#undef';
+PREPROC_IFDEF				: '#ifdef';
+PREPROC_IFNDEF				: '#ifndef';
+PREPROC_ELSEIF				: '#elseif';
+PREPROC_ENDIF				: '#endif';
+PREPROC_LINE				: '#line';
+PREPROC_IF					: '#if';
+PREPROC_ELSE				: '#else';
+PREPROC_ARG 				: '##'[A-Za-z_][A-Za-z0-9_]* -> channel(HIDDEN) ;
 
 // end of added by Ali
 

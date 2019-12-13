@@ -58,6 +58,8 @@ export class P4IR implements Node {
 				return [];
 			}
 			let varAttr: Attribute = p4Ir.findType(varName);
+			if(varAttr == null)
+				return [];
 			let varBlck: P4IR = varAttr.getParent();
 
 			logDebug("look: " + varAttr.getVarType());
