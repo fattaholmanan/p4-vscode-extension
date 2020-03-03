@@ -46,6 +46,7 @@ export class MyP4Listener extends P4Listener{
 		let p:P4IR = this.pushBlock(P4IRTypes.TABLE, ctx);
 		let helperField: Attribute = new Attribute("apply()", "method", CompletionItemKind.Function);
 		p.add(helperField);
+		resource_calc.newTable(ctx);
 	}
 
 	exitTableDeclaration(ctx){
