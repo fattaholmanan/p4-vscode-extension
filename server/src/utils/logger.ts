@@ -16,7 +16,7 @@ export function logInfo(msg:string){
 }
 
 export function logDebug(msg:string){
-	// log(msg, LOGGER_MODE.DEBUG);
+	log(msg, LOGGER_MODE.DEBUG);
 }
 
 export function logError(msg:string){
