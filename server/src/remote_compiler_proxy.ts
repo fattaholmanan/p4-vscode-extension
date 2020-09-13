@@ -68,7 +68,7 @@ function parseBmv2CompilerOutputOk(
   throw new Error("to be implemented!");
 }
 
-function extractErrorMessage(errSection: string): string {
+export function extractErrorMessage(errSection: string): string {
   const first_layer: RegExpExecArray = /(\(\d+\))?(error.*)/.exec(errSection);
   if (first_layer == null) return null;
   if (first_layer.length == 0) return null;
