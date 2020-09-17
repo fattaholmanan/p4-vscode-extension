@@ -8,13 +8,18 @@
 		"rootDir": "src",
 		"lib": [
 			"es6"
-		]
+		],
+		"types": []
 	},
+	"typeRoots": [
+		"./node_modules/@types"
+	],
 	"include": [
 		"src"
 	],
 	"exclude": [
 		"node_modules",
-		".vscode-test"
+		".vscode-test",
+		"../node_modules"
 	]
 }

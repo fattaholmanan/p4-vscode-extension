@@ -1,4 +1,4 @@
-import { P4ExtensionSettings } from "./p4_extension_setting";
+import { P4ExtensionSettings } from "./Settings";
 import { p4ExtensionServer } from "./server";
 
 export function getDocumentSettings(

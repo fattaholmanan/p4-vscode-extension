@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.userLog = exports.logError = exports.logDebug = exports.logInfo = exports.log = exports.LOGGER_MODE = void 0;
 const vscode = require("vscode");
 var LOGGER_MODE;
 (function (LOGGER_MODE) {

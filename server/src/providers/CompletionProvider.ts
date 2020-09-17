@@ -6,7 +6,7 @@ import {
 } from "vscode-languageserver";
 import { p4ExtensionServer } from "../server";
 import { logDebug } from "../utils/logger";
-import { MY_LISTENER } from "../antlr_compiler_proxy";
+import { MY_LISTENER } from "../AntlrParser";
 
 export function completionProvider(
   _textDocumentPosition: TextDocumentPositionParams

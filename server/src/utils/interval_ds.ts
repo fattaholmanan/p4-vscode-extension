@@ -1,4 +1,4 @@
-import { P4IR, Attribute } from "../compiler/p4_ir";
+import { P4IR, Attribute } from "../parser/P4IR";
 import { logInfo, logDebug } from "./logger";
 import { PriorityQueue, Node } from "./priorityqueue";
 

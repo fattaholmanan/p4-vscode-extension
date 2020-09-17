@@ -1,12 +1,19 @@
-import { P4IRTypes } from "./p4_ir_types";
-import { debuglog } from "util";
-import { logInfo, logDebug } from "../utils/logger";
 import {
   CompletionItem,
   CompletionItemKind,
   MarkupContent,
 } from "vscode-languageserver";
 import { Node } from "../utils/priorityqueue";
+
+export enum P4IRTypes {
+  HEADER = "HEADER",
+  CONTROLLER = "CONTRL",
+  TABLE = "TABLE",
+  VAR = "VARIABLE",
+  P4_PROGRAM = "P4_PROGRAM",
+  ACTION = "ACTION",
+  STRUCT = "STRUCT",
+}
 
 export class P4IR implements Node {
   private attributes: Map<string, Attribute> = new Map();
@@ -45,7 +52,6 @@ export class P4IR implements Node {
   }
 
   private _matchAttrName(keyword: string): CompletionItem[] {
-    logDebug("Match Name: " + keyword);
     const keyArr: string[] = keyword.split(".");
     if (keyword.charAt(keyword.length - 1) != ".")
       // removing the last segment.
@@ -56,9 +62,7 @@ export class P4IR implements Node {
       const varName: string = keyArr[i];
       if (varName.trim().length == 0) continue;
 
-      logDebug("******** " + varName + " ******");
       if (p4Ir == null) {
-        logDebug("something went wrong!");
         return [];
       }
       const varAttr: Attribute = p4Ir.findType(varName);
@@ -67,12 +71,10 @@ export class P4IR implements Node {
       const varType = varBlck.findType(varAttr.getVarType());
 
       if (varType == null) {
-        logDebug("something went wrong!");
         break;
       }
 
       p4Ir = varType.getP4Ir();
-      logDebug("**********");
     }
     return p4Ir._getAttributesArray();
   }
@@ -85,15 +87,12 @@ export class P4IR implements Node {
   }
 
   private findType(varName: string): Attribute | null {
-    logDebug("Try to find Type: " + varName + ", in blck: " + this);
     let p4Ir: P4IR = this;
     while (true) {
       if (p4Ir.attributes.has(varName)) {
-        logDebug("found type: " + varName + ": blck ->" + this);
         return p4Ir.attributes.get(varName);
       }
       if (p4Ir.type == P4IRTypes.P4_PROGRAM) {
-        logDebug("Not found type!");
         return null;
       }
       p4Ir = p4Ir.parent;
@@ -101,7 +100,6 @@ export class P4IR implements Node {
   }
 
   private _matchAttrAny(): CompletionItem[] {
-    logDebug("Match Any!");
     const arr: CompletionItem[] = [];
     let p4Ir: P4IR = this;
 

@@ -14,8 +14,8 @@ import {
   DidChangeConfigurationNotification,
 } from "vscode-languageserver";
 import { sendToRemoteServer } from "./remote_compiler_proxy";
-import { sendToAntlrCompiler } from "./antlr_compiler_proxy";
-import { P4ExtensionSettings } from "./p4_extension_setting";
+import { sendToAntlrCompiler } from "./AntlrParser";
+import { P4ExtensionSettings } from "./Settings";
 import { logDebug, logInfo } from "./utils/logger";
 import { getDocumentSettings } from "./utils";
 import { completionProvider } from "./providers/CompletionProvider";
