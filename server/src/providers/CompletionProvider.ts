@@ -2,7 +2,6 @@ import {
   TextDocumentPositionParams,
   TextDocument,
   CompletionItem,
-  CompletionItemKind,
 } from "vscode-languageserver";
 import { p4ExtensionServer } from "../server";
 import { logDebug } from "../utils/logger";
@@ -22,6 +21,8 @@ export function completionProvider(
     keyword,
     _textDocumentPosition
   );
+
+  logDebug("Trying to find completion.");
   for (const item of items) {
     logDebug("item: " + item);
   }

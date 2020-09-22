@@ -6,7 +6,7 @@ export default class Stack<T> {
     this.stack = [];
   }
 
-  get size() {
+  get size(): number {
     return this.stack.length;
   }
 

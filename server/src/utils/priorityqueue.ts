@@ -8,12 +8,9 @@ export type Tuple<T> = [T, number];
 export class PriorityQueue<T extends Node> {
   heap: Tuple<T>[] = [];
 
-  constructor() {}
-
-  insert(val: T, priority: number) {
+  insert(val: T, priority: number): void {
     if (!this.heap.length || this.heap[this.heap.length - 1][1] > priority) {
       this.heap.push([val, priority]);
-      return this.heap;
     }
 
     const tmp: Tuple<T>[] = [];
@@ -30,7 +27,7 @@ export class PriorityQueue<T extends Node> {
       tmp.push(this.heap[i]);
     }
 
-    return (this.heap = tmp);
+    this.heap = tmp;
   }
 
   has({ x, y }: T) {

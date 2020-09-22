@@ -24,7 +24,6 @@ export class SymbolTable {
     pos: TextDocumentPositionParams
   ): CompletionItem[] {
     logDebug("keyword: " + keyword);
-
     const lineNumber: number = pos.position.line;
     const p4Ir: P4IR = this.SYMBOL_ARR.get(lineNumber);
     return p4Ir.getAutoCompletion(keyword);

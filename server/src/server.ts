@@ -12,14 +12,18 @@ import {
   CompletionItem,
   Connection,
   DidChangeConfigurationNotification,
+  Diagnostic,
+  TextDocument,
+  DiagnosticSeverity,
 } from "vscode-languageserver";
-import { sendToRemoteServer } from "./remote_compiler_proxy";
-import { sendToAntlrCompiler } from "./AntlrParser";
 import { P4ExtensionSettings } from "./Settings";
 import { logDebug, logInfo } from "./utils/logger";
 import { getDocumentSettings } from "./utils";
 import { completionProvider } from "./providers/CompletionProvider";
 import { highlightProvider } from "./providers/DocumentHighlightProvider";
+import LocalCompiler from "./compilers/LocalCompiler";
+import { ParsedCompilerOutput } from "./compilers/Compiler";
+import parseWithAntlr from "./AntlrParser";
 
 const connection = createConnection(ProposedFeatures.all);
 let hasConfigurationCapability = false;
@@ -30,9 +34,51 @@ export const documentSettings: Map<
   Thenable<P4ExtensionSettings>
 > = new Map();
 
+function getStartingOffsetOfDocument(
+  lineNumber: number,
+  rawCode: string,
+  textDocument: TextDocument
+): number {
+  const text = textDocument.getText();
+  const lines = text.split(/(?:\r\n|\r|\n)/g);
+  let myOffset = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    if (i === lineNumber - 1) {
+      myOffset += lines[i].indexOf(rawCode.trim());
+      break;
+    } else myOffset += lines[i].length + 1;
+  }
+  return myOffset;
+}
+
+const convertToDiagnostic = function (
+  input: ParsedCompilerOutput,
+  document: TextDocument
+): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  for (const { error, line, errorP4Code } of input) {
+    const a = getStartingOffsetOfDocument(line, errorP4Code, document);
+    const diagnostic = {
+      severity: DiagnosticSeverity.Error,
+      range: {
+        start: document.positionAt(a),
+        end: document.positionAt(a + errorP4Code.length),
+      },
+      message: `${error}`,
+      source: "bmv2",
+    };
+    diagnostics.push(diagnostic);
+  }
+
+  return diagnostics;
+};
+
 class Server {
   public connection: Connection;
   public documents: TextDocuments;
+
+  private localCompiler: LocalCompiler = null;
 
   constructor(connection: Connection) {
     this.connection = connection;
@@ -44,13 +90,23 @@ class Server {
 
     this.documents.listen(connection);
     this.connection.listen();
+    this.localCompiler = new LocalCompiler();
   }
 
   initializeDocuments() {
     this.documents.onDidChangeContent(async (change) => {
-      const mySetting = await getDocumentSettings(change.document.uri);
-      if (mySetting.useRemoteServer) sendToRemoteServer(change.document);
-      sendToAntlrCompiler(change.document);
+      const antlrDiagnostics = parseWithAntlr(change.document);
+      const compilerDiagnostics = convertToDiagnostic(
+        await this.localCompiler.compileURI(
+          change.document.uri,
+          change.document.getText()
+        ),
+        change.document
+      );
+      this.sendDiagnostics({
+        uri: change.document.uri,
+        diagnostics: [...antlrDiagnostics, ...compilerDiagnostics],
+      });
     });
 
     this.connection.onDidChangeWatchedFiles((_change) => {
@@ -121,9 +177,8 @@ class Server {
 
     this.connection.onDidChangeConfiguration(async (change) => {
       // let mySetting = await getDocument\Settings();
-
-      this.documents.all().forEach(sendToRemoteServer);
-      this.documents.all().forEach(sendToAntlrCompiler);
+      //this.documents.all().forEach(sendToRemoteServer);
+      //this.documents.all().forEach(sendToAntlrCompiler);
     });
   }
 
