@@ -1,4 +1,8 @@
-import { TextDocument } from "vscode-languageserver";
+import {
+  Diagnostic,
+  DiagnosticSeverity,
+  TextDocument,
+} from "vscode-languageserver";
 
 export type ParsedCompilerOutput = {
   line: number;
@@ -7,11 +11,7 @@ export type ParsedCompilerOutput = {
 }[];
 
 export default abstract class Compiler {
-  abstract async compile(input: TextDocument): Promise<ParsedCompilerOutput>;
-  abstract async compileURI(
-    input: TextDocument["uri"],
-    content?: string
-  ): Promise<ParsedCompilerOutput>;
+  abstract async compile(input: TextDocument): Promise<Diagnostic[]>;
 
   protected parseInput(input: string): ParsedCompilerOutput {
     const result = [];
@@ -51,5 +51,44 @@ export default abstract class Compiler {
     } catch (e) {
       return first_layer[0];
     }
+  }
+
+  protected getStartingOffsetOfDocument(
+    lineNumber: number,
+    rawCode: string,
+    textDocument: TextDocument
+  ): number {
+    const text = textDocument.getText();
+    const lines = text.split(/(?:\r\n|\r|\n)/g);
+    let myOffset = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (i === lineNumber - 1) {
+        myOffset += lines[i].indexOf(rawCode.trim());
+        break;
+      } else myOffset += lines[i].length + 1;
+    }
+    return myOffset;
+  }
+  protected convertToDiagnostic(
+    input: ParsedCompilerOutput,
+    document: TextDocument
+  ): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+    for (const { error, line, errorP4Code } of input) {
+      const a = this.getStartingOffsetOfDocument(line, errorP4Code, document);
+      const diagnostic = {
+        severity: DiagnosticSeverity.Error,
+        range: {
+          start: document.positionAt(a),
+          end: document.positionAt(a + errorP4Code.length),
+        },
+        message: `${error}`,
+        source: "bmv2",
+      };
+      diagnostics.push(diagnostic);
+    }
+
+    return diagnostics;
   }
 }
