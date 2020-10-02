@@ -19,6 +19,8 @@ import { completionProvider } from "./providers/CompletionProvider";
 import { highlightProvider } from "./providers/DocumentHighlightProvider";
 import LocalCompiler from "./compilers/LocalCompiler";
 import parseWithAntlr from "./AntlrParser";
+import astparser from "./parser/ASTParser";
+import testDiagsfromAST from "./manual";
 
 const connection = createConnection(ProposedFeatures.all);
 let hasConfigurationCapability = false;
@@ -50,13 +52,14 @@ class Server {
 
   initializeDocuments() {
     this.documents.onDidChangeContent(async (change) => {
-      const antlrDiagnostics = parseWithAntlr(change.document);
-      const compilerDiagnostics = await this.localCompiler.compile(
-        change.document
+      const antlrDiagnostics = testDiagsfromAST(
+        change.document,
+        astparser(change.document.getText())
       );
+      console.log(antlrDiagnostics);
       this.sendDiagnostics({
         uri: change.document.uri,
-        diagnostics: [...antlrDiagnostics, ...compilerDiagnostics],
+        diagnostics: [...antlrDiagnostics],
       });
     });
 
