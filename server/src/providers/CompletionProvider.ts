@@ -4,8 +4,8 @@ import {
   CompletionItem,
 } from "vscode-languageserver";
 import { p4ExtensionServer } from "../server";
-import { logDebug } from "../utils/logger";
-import { MY_LISTENER } from "../AntlrParser";
+import ASTMetadata from "../parser/ASTMetadata";
+import { TypeDeclaration } from "../parser/ASTNode";
 
 export function completionProvider(
   _textDocumentPosition: TextDocumentPositionParams
@@ -16,17 +16,40 @@ export function completionProvider(
   const _position = textDocument.offsetAt(_textDocumentPosition.position);
   const text: string = textDocument.getText();
   const keyword: string = findkeywordByPosition(text, _position);
+  const metadata = new ASTMetadata();
+  metadata.parse(text);
+  const identifiers = metadata.getIdentifiersAtOffset(_position);
+  const items: CompletionItem[] = [];
+  console.log("keyword:", keyword);
+  const split = keyword.split(".");
+  let identifiersStruct = [];
 
-  const items: CompletionItem[] = MY_LISTENER.getAutoCompletions(
-    keyword,
-    _textDocumentPosition
-  );
-
-  logDebug("Trying to find completion.");
-  for (const item of items) {
-    logDebug("item: " + item);
+  if (split.length > 1) {
+    const baseType = metadata.getTypeOfIdentifierAtOffset(_position, split[0]);
+    if (baseType !== undefined && baseType.id === "struct") {
+      let nestedType = baseType;
+      identifiersStruct = Object.keys(nestedType.members);
+      split.splice(0, 1);
+      while (split.length > 1) {
+        const typeName = baseType.members[split[0]];
+        console.log("struct nested type: " + typeName);
+        const t = metadata.getDeclaredTypeAtOffset(typeName, _position);
+        console.log("retrieved nested type: ", t);
+        if (t.id === "struct") {
+          console.log("updated nested type: ", t);
+          nestedType = t;
+          identifiersStruct = Object.keys(nestedType.members);
+        }
+        console.log(split);
+        split.splice(0, 1);
+      }
+    }
   }
-  return items;
+
+  if (identifiersStruct.length > 0) {
+    return identifiersStruct.map((id) => ({ label: id }));
+  }
+  return identifiers.map((id) => ({ label: id }));
 }
 
 function findkeywordByPosition(text: string, pos: number): string | null {

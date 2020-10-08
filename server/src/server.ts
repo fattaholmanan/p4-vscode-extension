@@ -18,9 +18,7 @@ import { logDebug, logInfo } from "./utils/logger";
 import { completionProvider } from "./providers/CompletionProvider";
 import { highlightProvider } from "./providers/DocumentHighlightProvider";
 import LocalCompiler from "./compilers/LocalCompiler";
-import parseWithAntlr from "./AntlrParser";
-import astparser from "./parser/ASTParser";
-import testDiagsfromAST from "./manual";
+import ASTMetadata from "./parser/ASTMetadata";
 
 const connection = createConnection(ProposedFeatures.all);
 let hasConfigurationCapability = false;
@@ -52,14 +50,12 @@ class Server {
 
   initializeDocuments() {
     this.documents.onDidChangeContent(async (change) => {
-      const antlrDiagnostics = testDiagsfromAST(
-        change.document,
-        astparser(change.document.getText())
-      );
-      console.log(antlrDiagnostics);
+      const astmeta = new ASTMetadata();
+      astmeta.parse(change.document.getText());
+      const diagnostics = astmeta.getDiagnostics();
       this.sendDiagnostics({
         uri: change.document.uri,
-        diagnostics: [...antlrDiagnostics],
+        diagnostics,
       });
     });
 
