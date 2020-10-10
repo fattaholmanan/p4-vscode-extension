@@ -1,5 +1,3 @@
-import { TextDocumentPositionParams } from "vscode-languageserver";
-
 export interface ASTNodeTextPosition {
   line: number;
   start: number;

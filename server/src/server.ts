@@ -16,6 +16,7 @@ import {
 import { P4ExtensionSettings } from "./Settings";
 import { logDebug, logInfo } from "./utils/logger";
 import { completionProvider } from "./providers/CompletionProvider";
+import { definitionProvider } from "./providers/DefinitionProvider";
 import { highlightProvider } from "./providers/DocumentHighlightProvider";
 import LocalCompiler from "./compilers/LocalCompiler";
 import ASTMetadata from "./parser/ASTMetadata";
@@ -103,6 +104,7 @@ class Server {
             resolveProvider: true,
             triggerCharacters: ["<", ">", "."],
           },
+          definitionProvider: true,
           documentRangeFormattingProvider: true,
           documentHighlightProvider: true,
           foldingRangeProvider: true,
@@ -135,6 +137,7 @@ class Server {
   private registerProviders() {
     // This handler provides the initial list of the completion items.
     connection.onCompletion(completionProvider);
+    connection.onDefinition(definitionProvider);
     connection.onDocumentHighlight(highlightProvider);
 
     // This handler resolve additional information for the item selected in

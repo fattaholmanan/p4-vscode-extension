@@ -5,7 +5,6 @@ import {
 } from "vscode-languageserver";
 import { p4ExtensionServer } from "../server";
 import ASTMetadata from "../parser/ASTMetadata";
-import { TypeDeclaration } from "../parser/ASTNode";
 
 export function completionProvider(
   _textDocumentPosition: TextDocumentPositionParams
