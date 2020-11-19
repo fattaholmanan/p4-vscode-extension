@@ -18,9 +18,10 @@ import { logDebug, logInfo } from "./utils/logger";
 import { completionProvider } from "./providers/CompletionProvider";
 import { definitionProvider } from "./providers/DefinitionProvider";
 import { highlightProvider } from "./providers/DocumentHighlightProvider";
+import { hoverProvider } from "./providers/HoverProvider";
 import LocalCompiler from "./compilers/LocalCompiler";
-import ASTMetadata from "./parser/ASTMetadata";
-
+import ASTMetadata from "./parser/ASTDocument";
+import ASTDocumentManager from "./parser/ASTDocumentManager";
 const connection = createConnection(ProposedFeatures.all);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
@@ -51,9 +52,10 @@ class Server {
 
   initializeDocuments() {
     this.documents.onDidChangeContent(async (change) => {
-      const astmeta = new ASTMetadata();
-      astmeta.parse(change.document.getText());
-      const diagnostics = astmeta.getDiagnostics();
+      ASTDocumentManager.updateDocument(change.document.uri, change.document);
+      const diagnostics = ASTDocumentManager.getASTDocument(
+        change.document.uri
+      ).getDiagnostics();
       this.sendDiagnostics({
         uri: change.document.uri,
         diagnostics,
@@ -105,6 +107,7 @@ class Server {
             triggerCharacters: ["<", ">", "."],
           },
           definitionProvider: true,
+          hoverProvider: true,
           documentRangeFormattingProvider: true,
           documentHighlightProvider: true,
           foldingRangeProvider: true,
@@ -139,6 +142,7 @@ class Server {
     connection.onCompletion(completionProvider);
     connection.onDefinition(definitionProvider);
     connection.onDocumentHighlight(highlightProvider);
+    connection.onHover(hoverProvider);
 
     // This handler resolve additional information for the item selected in
     // the completion list.

@@ -23,7 +23,7 @@ export default class ASTNode {
     this.children.push(node);
   }
 
-  setParent(node: ASTNode) {
+  setParent(node: ASTNode): void {
     this.parent = node;
   }
 
@@ -31,11 +31,11 @@ export default class ASTNode {
     return this.children;
   }
 
-  getType() {
+  getType(): string {
     return this.type;
   }
 
-  getParent() {
+  getParent(): ASTNode {
     return this.parent;
   }
 
@@ -43,7 +43,8 @@ export default class ASTNode {
     const pos = this.getPosition();
     let out = this.getType();
     if (pos) {
-      out = out + String(pos.line) + " | s: " + pos.start + " e:" + pos.end;
+      out =
+        out + " (" + String(pos.line) + ", " + pos.start + ", " + pos.end + ")";
     }
     console.log(" ".repeat(indendation) + out);
     this.children.forEach((child) => {
@@ -101,7 +102,7 @@ export class BlockScopeNode extends ASTNode {
     this.types.set(id.identifier, id);
   }
 
-  addStructTypeDeclaration(std: StructTypeDeclaration) {
+  addStructTypeDeclaration(std: StructTypeDeclaration): void {
     this.types.set(std.identifier, std);
   }
 
@@ -152,8 +153,10 @@ export class BlockScopeNode extends ASTNode {
 
 export class IdentifierNode extends ASTNode {
   private identifier = "";
-  setIdentifier(s: string) {
+  setIdentifier(s: string): void {
     this.identifier = s;
   }
-  getIdentifier() {}
+  getIdentifier(): string {
+    return this.identifier;
+  }
 }

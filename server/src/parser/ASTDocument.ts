@@ -1,4 +1,4 @@
-import { Diagnostic } from "vscode-languageserver";
+import { Diagnostic, TextDocument } from "vscode-languageserver";
 import ASTNode, {
   BlockScopeNode,
   DeclaredIdentifier,
@@ -10,6 +10,11 @@ import parseAST from "./ASTParser";
 
 export default class ASTDocument {
   private root: ASTNode;
+  private textDoc: TextDocument;
+
+  constructor(doc: TextDocument) {
+    this.textDoc = doc;
+  }
 
   public getRoot(): ASTNode {
     return this.root;
