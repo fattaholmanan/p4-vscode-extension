@@ -40,15 +40,6 @@ export default class ASTDocument {
       }
     }
     traverse(this.root);
-    if (current) {
-      console.log(
-        current.getType(),
-        current.getPosition().start,
-        current.getPosition().end
-      );
-    } else {
-      console.log("No node found.");
-    }
     return current;
   }
 
@@ -64,7 +55,6 @@ export default class ASTDocument {
       }
     }
     if (closestNode) {
-      console.log(closestNode);
       traverseUpwardsToNextBlockScopeNode(closestNode);
     }
 
@@ -125,7 +115,6 @@ export default class ASTDocument {
     if (closestNode) {
       traverseUpwardsToNextBlockScopeNode(closestNode);
     }
-    console.log(type);
     return type;
   }
 

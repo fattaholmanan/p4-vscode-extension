@@ -10,9 +10,7 @@ export default class LocalCompiler extends Compiler {
     super();
     try {
       execSync("p4c");
-    } catch (err) {
-      console.log(err);
-    }
+    } catch (err) {}
   }
 
   async compile(input: TextDocument): Promise<Diagnostic[]> {

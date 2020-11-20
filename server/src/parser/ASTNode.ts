@@ -46,7 +46,7 @@ export default class ASTNode {
       out =
         out + " (" + String(pos.line) + ", " + pos.start + ", " + pos.end + ")";
     }
-    console.log(" ".repeat(indendation) + out);
+    //console.log(" ".repeat(indendation) + out);
     this.children.forEach((child) => {
       child.printTree(indendation + 2);
     });
@@ -87,7 +87,6 @@ export class BlockScopeNode extends ASTNode {
 
   getTypeOfIdentifier(id: string): TypeDeclaration | undefined {
     const type = this.identifiers.get(id)?.type;
-    console.log(type, this.identifiers.keys());
     if (type) {
       return this.getDeclaredType(type);
     }
@@ -129,7 +128,6 @@ export class BlockScopeNode extends ASTNode {
   }
 
   getDeclaredType(id: string): TypeDeclaration | undefined {
-    console.log(this.types.keys());
     if (this.types.has(id)) {
       return this.types.get(id);
     }

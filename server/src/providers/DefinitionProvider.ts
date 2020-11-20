@@ -20,15 +20,10 @@ export function definitionProvider(
   const idoffset = astDocument.getDeclaredIdentifierOffset(identifier, offset);
   const typeoffset = astDocument.getDeclaredTypeOffset(identifier, offset);
 
-  console.log(
-    `definitionprovider identifier: ${identifier} | idoffset: ${idoffset} | typeoffset: ${typeoffset}`
-  );
-
   const range = {
     start: textDocument.positionAt(idoffset !== -1 ? idoffset : typeoffset),
     end: textDocument.positionAt(idoffset !== -1 ? idoffset : typeoffset),
   };
-  console.log(range);
   return {
     uri: textDocument.uri,
     range,

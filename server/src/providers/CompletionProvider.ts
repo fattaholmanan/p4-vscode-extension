@@ -20,7 +20,6 @@ export function completionProvider(
   );
   const identifiers = astDocument.getIdentifiersAtOffset(_position);
   const items: CompletionItem[] = [];
-  console.log("keyword:", keyword);
   const split = keyword.split(".");
   let identifiersStruct = [];
 
@@ -34,16 +33,12 @@ export function completionProvider(
       identifiersStruct = Object.keys(nestedType.members);
       split.splice(0, 1);
       while (split.length > 1) {
-        const typeName = baseType.members[split[0]];
-        console.log("struct nested type: " + typeName);
-        const t = astDocument.getDeclaredTypeAtOffset(typeName, _position);
-        console.log("retrieved nested type: ", t);
-        if (t.id === "struct") {
-          console.log("updated nested type: ", t);
-          nestedType = t;
+        const typeName = nestedType.members[split[0]];
+        const type = astDocument.getDeclaredTypeAtOffset(typeName, _position);
+        if (type.id === "struct") {
+          nestedType = type;
           identifiersStruct = Object.keys(nestedType.members);
         }
-        console.log(split);
         split.splice(0, 1);
       }
     }
