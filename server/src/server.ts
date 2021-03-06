@@ -110,7 +110,7 @@ class Server {
           hoverProvider: true,
           documentRangeFormattingProvider: true,
           documentHighlightProvider: true,
-          //foldingRangeProvider: true,
+          foldingRangeProvider: false,
         },
       };
     });
