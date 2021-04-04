@@ -4,10 +4,21 @@
 		"module": "commonjs",
 		"moduleResolution": "node",
 		"sourceMap": true,
-		"outDir": "out",
+		"outDir": "build",
 		"rootDir": "src",
-		"lib": ["es6"]
+		"lib": [
+			"es6"
+		]
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", ".vscode-test"]
+	"typeRoots": [
+		"./node_modules/@types"
+	],
+	"include": [
+		"src"
+	],
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"../node_modules"
+	]
 }

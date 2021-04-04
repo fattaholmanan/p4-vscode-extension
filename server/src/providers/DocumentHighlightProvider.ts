@@ -1,4 +1,8 @@
-import { TextDocumentPositionParams, CompletionItem, DocumentHighlight } from 'vscode-languageserver';
+import {
+  TextDocumentPositionParams,
+  CompletionItem,
+  DocumentHighlight,
+} from "vscode-languageserver";
 
 /*
  * DocumentHighlightProvider
@@ -6,6 +10,8 @@ import { TextDocumentPositionParams, CompletionItem, DocumentHighlight } from 'v
  * Super basic highlight provider
  */
 
-export function highlightProvider(_textDocumentPosition: TextDocumentPositionParams): DocumentHighlight[]{
-	return [];
+export function highlightProvider(
+  _textDocumentPosition: TextDocumentPositionParams
+): DocumentHighlight[] {
+  return [];
 }
