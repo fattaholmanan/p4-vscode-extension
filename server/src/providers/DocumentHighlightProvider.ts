@@ -1,4 +1,4 @@
-import { TextDocumentPositionParams, CompletionItem, DocumentHighlight } from 'vscode-languageserver';
+import { TextDocumentPositionParams, DocumentHighlight } from 'vscode-languageserver';
 
 /*
  * DocumentHighlightProvider

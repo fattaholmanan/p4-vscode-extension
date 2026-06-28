@@ -1,29 +1,26 @@
-import { TextDocumentPositionParams, TextDocument, CompletionItem, CompletionItemKind } from 'vscode-languageserver';
+import { TextDocumentPositionParams, CompletionItem } from 'vscode-languageserver';
 import { p4ExtensionServer } from '../server';
-import { logDebug } from '../utils/logger';
 import { MY_LISTENER } from '../antlr_compiler_proxy';
 
-export function completionProvider(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[]{
-	let textDocument: TextDocument = p4ExtensionServer.documents.get(_textDocumentPosition.textDocument.uri);
-	let _position = textDocument.offsetAt(_textDocumentPosition.position);
-	let text: string = textDocument.getText();
-	let keyword: string = findkeywordByPosition(text, _position);
-	
-	let items: CompletionItem[] = MY_LISTENER.getAutoCompletions(keyword, _textDocumentPosition);
-	for(let item of items){
-		logDebug("item: " + item);
+export function completionProvider(params: TextDocumentPositionParams): CompletionItem[] {
+	const textDocument = p4ExtensionServer.documents.get(params.textDocument.uri);
+	if (!textDocument || !MY_LISTENER) {
+		return [];
 	}
-	return items; 
+
+	const offset = textDocument.offsetAt(params.position);
+	const keyword = findKeywordByPosition(textDocument.getText(), offset);
+	return MY_LISTENER.getAutoCompletions(keyword, params);
 }
 
-function findkeywordByPosition(text: string, pos: number): string | null{
-	let firstPart: string = text.substring(0, pos);
-	let lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
-	let lastLine: string = lines[lines.length - 1];
-	let keywordArr: string[] = /([a-zA-Z_]+[0-9]*\.)+([a-zA-Z_]+[0-9]*)?(?=$)/.exec(lastLine);
-	if(keywordArr != null){
-		let keyword: string = keywordArr[0];
-		return keyword;
-	}
-	return null;
+/**
+ * Extracts a dotted access chain (e.g. `hdr.ipv4.`) immediately to the left of
+ * the cursor, used to resolve member completions. Returns null for a plain scope.
+ */
+function findKeywordByPosition(text: string, pos: number): string | null {
+	const firstPart = text.substring(0, pos);
+	const lines = firstPart.split(/(?:\r\n|\r|\n|' '|\t)/g);
+	const lastLine = lines[lines.length - 1];
+	const keywordArr = /([a-zA-Z_]+[0-9]*\.)+([a-zA-Z_]+[0-9]*)?(?=$)/.exec(lastLine);
+	return keywordArr ? keywordArr[0] : null;
 }

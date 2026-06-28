@@ -1,26 +1,31 @@
-import { P4IRTypes } from './p4_ir_types' ;
-import { debuglog } from 'util';
-import { logInfo, logDebug } from '../utils/logger';
+import { ParserRuleContext } from 'antlr4ng';
 import { CompletionItem, CompletionItemKind, MarkupContent } from 'vscode-languageserver';
+import { logDebug } from '../utils/logger';
 import { Node } from '../utils/priorityqueue';
+import { P4IRTypes } from './p4_ir_types';
 
+/**
+ * A P4 Intermediate Representation node: one lexical scope (program, control,
+ * table, header, struct, action) holding its declared attributes and a link to
+ * its enclosing scope. Spans the source line range [x, y].
+ */
 export class P4IR implements Node {
-	private attributes: Map<string, Attribute> = new Map();
-	private type: P4IRTypes;
-	private parent: P4IR;
+	private readonly attributes: Map<string, Attribute> = new Map();
+	private readonly type: P4IRTypes;
+	private readonly parent: P4IR | null;
+	private readonly ctx: ParserRuleContext;
 	x: number;
 	y: number;
-	private ctx;
 
-	constructor(type: P4IRTypes, parent: P4IR, ctx){
+	constructor(type: P4IRTypes, parent: P4IR | null, ctx: ParserRuleContext) {
 		this.type = type;
 		this.parent = parent;
 		this.ctx = ctx;
-		this.x = this.ctx.start.line;
-		this.y = this.ctx.stop.line;
+		this.x = ctx.start?.line ?? 0;
+		this.y = ctx.stop?.line ?? this.x;
 	}
 
-	getCtx(){
+	getCtx(): ParserRuleContext {
 		return this.ctx;
 	}
 
@@ -32,83 +37,79 @@ export class P4IR implements Node {
 		return this.y;
 	}
 
-	getAutoCompletion(keyword: string): CompletionItem[] {
-		let attrArr: CompletionItem[];
-		if(keyword == null){
-			attrArr = this._matchAttrAny();
-		}else
-			attrArr = this._matchAttrName(keyword);
-		return attrArr;
+	getAutoCompletion(keyword: string | null): CompletionItem[] {
+		if (keyword == null) {
+			return this._matchAttrAny();
+		}
+		return this._matchAttrName(keyword);
 	}
 
 	private _matchAttrName(keyword: string): CompletionItem[] {
-		logDebug("Match Name: " + keyword);
-		let keyArr: string[] = keyword.split(".");
-		if(keyword.charAt(keyword.length - 1) != '.') // removing the last segment.
+		logDebug('Match name: ' + keyword);
+		const keyArr: string[] = keyword.split('.');
+		// Drop the partial segment after the last dot (the text being typed).
+		if (keyword.charAt(keyword.length - 1) !== '.') {
 			keyArr.pop();
-
-		let p4Ir: P4IR = this;
-		for(let i = 0; i < keyArr.length; i++){
-			let varName: string = keyArr[i];
-			if(varName.trim().length == 0)
-				continue;
-
-			logDebug("******** " + varName + " ******");
-			if(p4Ir == null){
-				logDebug("something went wrong!");
-				return [];
-			}
-			let varAttr: Attribute = p4Ir.findType(varName);
-			if(varAttr == null)
-				return [];
-			let varBlck: P4IR = varAttr.getParent();
-			let varType = varBlck.findType(varAttr.getVarType());
-
-			if(varType == null){
-				logDebug("something went wrong!");
-				break;
-			}
-
-			p4Ir = varType.getP4Ir();
-			logDebug("**********");
 		}
-		return p4Ir._getAttributesArray();
+
+		let scope: P4IR | null = this;
+		for (const varName of keyArr) {
+			if (varName.trim().length === 0) {
+				continue;
+			}
+			if (scope == null) {
+				return [];
+			}
+			const varAttr = scope.findType(varName);
+			if (varAttr == null) {
+				return [];
+			}
+			const varBlock = varAttr.getParent();
+			if (varBlock == null) {
+				return [];
+			}
+			const varType: Attribute | null = varBlock.findType(varAttr.getVarType());
+			if (varType == null) {
+				return [];
+			}
+			scope = varType.getP4Ir();
+		}
+
+		return scope ? scope._getAttributesArray() : [];
 	}
 
-	private _getAttributesArray(){
-		let arr: CompletionItem[] = [];
-		for(let attr of this.attributes.values())
+	private _getAttributesArray(): CompletionItem[] {
+		const arr: CompletionItem[] = [];
+		for (const attr of this.attributes.values()) {
 			arr.push(attr.getCompletionItem());
+		}
 		return arr;
 	}
 
+	private lookupLocal(varName: string): Attribute | null {
+		return this.attributes.get(varName) ?? null;
+	}
+
 	private findType(varName: string): Attribute | null {
-		logDebug("Try to find Type: " + varName + ", in blck: " + this);
-		let p4Ir: P4IR = this;
-		while(true){
-			if(p4Ir.attributes.has(varName)){
-				logDebug("found type: " + varName + ": blck ->" + this);
-				return p4Ir.attributes.get(varName);
+		for (let scope: P4IR | null = this; scope != null; scope = scope.parent) {
+			const attr = scope.lookupLocal(varName);
+			if (attr) {
+				return attr;
 			}
-			if(p4Ir.type == P4IRTypes.P4_PROGRAM){
-				logDebug("Not found type!");
+			if (scope.type === P4IRTypes.P4_PROGRAM) {
 				return null;
 			}
-			p4Ir = p4Ir.parent;
 		}
+		return null;
 	}
 
 	private _matchAttrAny(): CompletionItem[] {
-		logDebug("Match Any!");
-		let arr: CompletionItem[] = [];
-		let p4Ir: P4IR = this;
-
-		while(true){
-			for(let attr of this.attributes.values())
-				arr.push(attr.getCompletionItem());
-			if(p4Ir.type == P4IRTypes.P4_PROGRAM)
+		const arr: CompletionItem[] = [];
+		for (let scope: P4IR | null = this; scope != null; scope = scope.parent) {
+			arr.push(...scope._getAttributesArray());
+			if (scope.type === P4IRTypes.P4_PROGRAM) {
 				break;
-			p4Ir = p4Ir.parent;
+			}
 		}
 		return arr;
 	}
@@ -117,35 +118,35 @@ export class P4IR implements Node {
 		return this.endLine() - this.startLine();
 	}
 
-	isInsideMe(lineNumber: number): boolean{
+	isInsideMe(lineNumber: number): boolean {
 		return lineNumber >= this.startLine() && lineNumber <= this.endLine();
 	}
 
-	add(attr: Attribute): void{
+	add(attr: Attribute): void {
 		this.attributes.set(attr.label, attr);
 		attr.setParent(this);
 	}
 
-	toString():string {
-		let tmpStr: string = `type: ${this.type} \n`;
-		for(let attr of this.attributes){
-			tmpStr += "\t" + attr + "\n";
+	toString(): string {
+		let tmpStr = `type: ${this.type}\n`;
+		for (const attr of this.attributes.values()) {
+			tmpStr += '\t' + attr.toString() + '\n';
 		}
 		return tmpStr;
 	}
 }
 
-export class Attribute{
+export class Attribute {
 	label: string;
 	detail: string;
 	documentation?: string | MarkupContent;
 	kind: CompletionItemKind;
-	private parent: P4IR;
-	private p4Ir: P4IR; 
-	private id: number;
-	static CURRENT_ID: number = 0;
-	
-	constructor(name: string, type: string, kind: CompletionItemKind){
+	private parent: P4IR | null = null;
+	private p4Ir: P4IR | null = null;
+	private readonly id: number;
+	static CURRENT_ID = 0;
+
+	constructor(name: string, type: string, kind: CompletionItemKind) {
 		this.label = name;
 		this.detail = type;
 		this.kind = kind;
@@ -155,8 +156,9 @@ export class Attribute{
 	getCompletionItem(): CompletionItem {
 		return {
 			label: this.label,
+			detail: this.detail,
 			kind: this.kind,
-			data: this.id
+			data: this.id,
 		};
 	}
 
@@ -164,7 +166,7 @@ export class Attribute{
 		this.parent = p;
 	}
 
-	setP4Ir(p: P4IR) {
+	setP4Ir(p: P4IR): void {
 		this.p4Ir = p;
 	}
 
@@ -172,20 +174,19 @@ export class Attribute{
 		return this.p4Ir;
 	}
 
-	getParent(): P4IR {
+	getParent(): P4IR | null {
 		return this.parent;
 	}
 
-	getVarName(): string{
+	getVarName(): string {
 		return this.label;
 	}
-	
-	getVarType():string{
+
+	getVarType(): string {
 		return this.detail;
 	}
 
-	toString(){
+	toString(): string {
 		return `${this.label}:${this.detail}`;
 	}
-	
 }

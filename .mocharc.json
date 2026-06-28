@@ -1,0 +1,5 @@
+{
+	"extension": "ts",
+	"spec": ["server/src/test/**/*.test.ts"],
+	"require": ["tsx/cjs"]
+}

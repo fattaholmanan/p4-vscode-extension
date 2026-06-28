@@ -1,13 +1,23 @@
+/*
+ * ANTLR4 grammar for P4_16, ported from the p4lang/p4c lex/yacc grammars
+ * (grammar/p4.y is kept alongside as the reference).
+ *
+ * Intentional, documented deviations from the bison grammar (see
+ * grammar/VERIFICATION.md):
+ *   - C-preprocessor directives (#include/#define/...) are NOT handled here.
+ *     They are resolved by the language server's preprocessor before parsing,
+ *     so no '#' ever reaches this grammar.
+ *   - IDENTIFIER and TYPE_IDENTIFIER cannot be distinguished lexically in ANTLR
+ *     (bison uses a symbol-table "lexer hack"). They are merged into `type_or_id`,
+ *     making the grammar intentionally more permissive.
+ *   - Right shift is matched as two '>' tokens so it does not clash with nested
+ *     generics like bit<bit<8>>.
+ */
 grammar P4;
 
-start : program;
-
-program : input;
-
-input :  /* epsilon */
-	| input declaration 
-	| input ';'
-	;
+program
+    : ( declaration | ';' )* EOF
+    ;
 
 declaration
     : constantDeclaration
@@ -20,54 +30,30 @@ declaration
     | errorDeclaration
     | matchKindDeclaration
     | functionDeclaration
-	| preprocessorLine
     ;
-
-preprocessorLine
-	: PREPROC_INCLUDE ppIncludeFileName
-	| PREPROC_DEFINE
-	| PREPROC_DEFINE expression expression
-	| PREPROC_UNDEF
-	| PREPROC_IFDEF
-	| PREPROC_IFNDEF
-	| PREPROC_IF expression
-	| PREPROC_ELSEIF
-	| PREPROC_ELSE
-	| PREPROC_ENDIF
-	| PREPROC_LINE
-	;
-
-ppIncludeFileName 
-	: STRING_LITERAL
-	| '<' ppIncludeFileName '>'
-	| name
-	| name '.' name
-	| './' ppIncludeFileName
-	| '../' ppIncludeFileName
-	| '/' ppIncludeFileName
-	;
 
 nonTypeName
     : type_or_id
     | APPLY
     | KEY
-    | ACTIONS     
-    | STATE     
-    | ENTRIES     
-    | TYPE     
+    | ACTIONS
+    | STATE
+    | ENTRIES
+    | TYPE
+    | PRIORITY
     ;
 
 name
     : nonTypeName
-    | type_or_id
+    | LIST
     ;
 
 nonTableKwName
     : type_or_id
-    // | TYPE_IDENTIFIER
     | APPLY
     | STATE
     | TYPE
+    | PRIORITY
     ;
 
 optCONST
@@ -76,8 +62,8 @@ optCONST
     ;
 
 optAnnotations
-    : /* empty */ 
-    | annotations 
+    : /* empty */
+    | annotations
     ;
 
 annotations
@@ -88,6 +74,7 @@ annotations
 annotation
     : '@' name
     | '@' name '(' annotationBody ')'
+    | '@' name '[' structuredAnnotationBody ']'
     | PRAGMA name annotationBody
     ;
 
@@ -98,59 +85,59 @@ annotationBody
     ;
 
 annotationToken
-    : UNEXPECTED_TOKEN 
-    | ABSTRACT         
-    | ACTION           
-    | ACTIONS          
-    | APPLY            
-    | BOOL             
-    | BIT              
-    | CONST            
-    | CONTROL          
-    | DEFAULT          
-    | ELSE             
-    | ENTRIES          
-    | ENUM             
-    | ERROR            
-    | EXIT             
-    | EXTERN           
-    | FALSE            
-    | HEADER           
-    | HEADER_UNION     
-    | IF               
-    | IN               
-    | INOUT            
-    | INT              
-    | KEY              
-    | MATCH_KIND       
-    | TYPE             
-    | OUT              
-    | PARSER           
-    | PACKAGE          
-    | PRAGMA           
-    | RETURN           
-    | SELECT           
-    | STATE            
-    | STRUCT           
-    | SWITCH           
-    | TABLE            
-    | THIS             
-    | TRANSITION       
-    | TRUE             
-    | TUPLE            
-    | TYPEDEF          
-    | VARBIT           
-    | VALUESET         
-    | VOID             
-    | '_'              
-
-    | type_or_id      
-    // | TYPE_IDENTIFIER
+    : ABSTRACT
+    | ACTION
+    | ACTIONS
+    | APPLY
+    | BOOL
+    | BIT
+    | CONST
+    | CONTROL
+    | DEFAULT
+    | ELSE
+    | ENTRIES
+    | ENUM
+    | ERROR
+    | EXIT
+    | EXTERN
+    | FALSE
+    | HEADER
+    | HEADER_UNION
+    | IF
+    | IN
+    | INOUT
+    | INT
+    | KEY
+    | MATCH_KIND
+    | TYPE
+    | OUT
+    | PARSER
+    | PACKAGE
+    | PRAGMA
+    | PRIORITY
+    | RETURN
+    | SELECT
+    | STATE
+    | STRING
+    | STRUCT
+    | SWITCH
+    | TABLE
+    | THIS
+    | TRANSITION
+    | TRUE
+    | TUPLE
+    | TYPEDEF
+    | VARBIT
+    | VALUESET
+    | LIST
+    | VOID
+    | '_'
+    | type_or_id
     | STRING_LITERAL
     | INTEGER
-
     | '&&&'
     | '..'
+    | '...'
     | '<<'
     | '&&'
     | '||'
@@ -159,40 +146,31 @@ annotationToken
     | '>='
     | '<='
     | '++'
-
-    | '+' 
+    | '+'
     | '|+|'
-    | '-' 
+    | '-'
     | '|-|'
-    | '*' 
-    | '/' 
-    | '%' 
-
-    | '|' 
-    | '&' 
-    | '^' 
-    | '~' 
-
-    // Omit parens. These are handled in annotationBody, since they must be
-    // balanced.
-    // | '(' 
-    // | ')' 
-
-    | '[' 
-    | ']' 
-    | '{' 
-    | '}' 
-    | '<' 
-    | '>' 
-
-    | '!' 
-    | ':' 
-    | ',' 
-    | '?' 
-    | '.' 
-    | '=' 
-    | ';' 
-    | '@' 
+    | '*'
+    | '/'
+    | '%'
+    | '|'
+    | '&'
+    | '^'
+    | '~'
+    | '['
+    | ']'
+    | '{'
+    | '}'
+    | '<'
+    | '>'
+    | '!'
+    | ':'
+    | ','
+    | '?'
+    | '.'
+    | '='
+    | ';'
+    | '@'
     ;
 
 kvList
@@ -227,18 +205,14 @@ direction
     ;
 
 packageTypeDeclaration
-    : optAnnotations PACKAGE name
-      optTypeParameters
-      '(' parameterList ')'
+    : optAnnotations PACKAGE name optTypeParameters '(' parameterList ')'
     ;
 
-instantiation	
-	: annotations typeRef '(' argumentList ')' name ';'
-	| typeRef '(' argumentList ')' name ';'
-	/* experimental */
-	| annotations typeRef '(' argumentList ')' name '=' objInitializer ';'
-	/* experimental */
-	| typeRef '(' argumentList ')' name '=' objInitializer ';'
+instantiation
+    : annotations typeRef '(' argumentList ')' name ';'
+    | typeRef '(' argumentList ')' name ';'
+    | annotations typeRef '(' argumentList ')' name '=' objInitializer ';'
+    | typeRef '(' argumentList ')' name '=' objInitializer ';'
     ;
 
 objInitializer
@@ -256,7 +230,7 @@ objDeclaration
     ;
 
 optConstructorParameters
-    : /* empty */ 
+    : /* empty */
     | '(' parameterList ')'
     ;
 
@@ -290,21 +264,22 @@ parserStates
     ;
 
 parserState
-    : optAnnotations STATE name
-      '{' parserStatements transitionStatement '}'
+    : optAnnotations STATE name '{' parserStatements transitionStatement '}'
     ;
 
 parserStatements
-    : /* empty */ 
+    : /* empty */
     | parserStatements parserStatement
     ;
 
 parserStatement
     : assignmentOrMethodCallStatement
     | directApplication
+    | emptyStatement
     | variableDeclaration
     | constantDeclaration
     | parserBlockStatement
+    | conditionalStatement
     ;
 
 parserBlockStatement
@@ -340,13 +315,25 @@ keysetExpression
     ;
 
 tupleKeysetExpression
-    /* at least two elements in the tuple */
     : '(' simpleKeysetExpression ',' simpleExpressionList ')'
+    | '(' reducedSimpleKeysetExpression ')'
+    ;
+
+optTrailingComma
+    : /* empty */
+    | ','
     ;
 
 simpleExpressionList
     : simpleKeysetExpression
     | simpleExpressionList ',' simpleKeysetExpression
+    ;
+
+reducedSimpleKeysetExpression
+    : expression '&&&' expression
+    | expression '..' expression
+    | DEFAULT
+    | '_'
     ;
 
 simpleKeysetExpression
@@ -364,17 +351,13 @@ valueSetDeclaration
     ;
 
 controlDeclaration
-    : controlTypeDeclaration optConstructorParameters
-      '{' controlLocalDeclarations APPLY controlBody '}'
+    : controlTypeDeclaration optConstructorParameters '{' controlLocalDeclarations APPLY controlBody '}'
     ;
 
 controlTypeDeclaration
-    : optAnnotations
-        CONTROL name
-        optTypeParameters
-        '(' parameterList ')'
-	;
-	
+    : optAnnotations CONTROL name optTypeParameters '(' parameterList ')'
+    ;
+
 controlLocalDeclarations
     : /* empty */
     | controlLocalDeclarations controlLocalDeclaration
@@ -393,12 +376,9 @@ controlBody
     ;
 
 externDeclaration
-    : optAnnotations
-        EXTERN nonTypeName
-        optTypeParameters
-        '{' methodPrototypes '}'
+    : optAnnotations EXTERN nonTypeName optTypeParameters '{' methodPrototypes '}'
     | optAnnotations EXTERN functionPrototype ';'
-    | optAnnotations EXTERN name ';' 
+    | optAnnotations EXTERN name ';'
     ;
 
 methodPrototypes
@@ -413,7 +393,7 @@ functionPrototype
 methodPrototype
     : optAnnotations functionPrototype ';'
     | optAnnotations ABSTRACT functionPrototype ';'
-    | optAnnotations type_or_id '(' parameterList ')' ';'  // constructor
+    | optAnnotations type_or_id '(' parameterList ')' ';'
     ;
 
 typeRef
@@ -421,6 +401,7 @@ typeRef
     | typeName
     | specializedType
     | headerStackType
+    | p4listType
     | tupleType
     ;
 
@@ -438,12 +419,17 @@ typeName
     : prefixedType
     ;
 
+p4listType
+    : LIST '<' typeArg '>'
+    ;
+
 tupleType
     : TUPLE '<' typeArgumentList '>'
     ;
 
 headerStackType
     : typeName '[' expression ']'
+    | specializedType '[' expression ']'
     ;
 
 specializedType
@@ -452,8 +438,10 @@ specializedType
 
 baseType
     : BOOL
+    | MATCH_KIND
     | ERROR
     | BIT
+    | STRING
     | INT
     | BIT '<' INTEGER '>'
     | INT '<' INTEGER '>'
@@ -466,7 +454,7 @@ baseType
 typeOrVoid
     : typeRef
     | VOID
-    | type_or_id // This is necessary because template arguments may introduce the return type
+    | type_or_id
     ;
 
 optTypeParameters
@@ -482,7 +470,6 @@ typeParameterList
 typeArg
     : typeRef
     | nonTypeName
-        // This is necessary because template arguments may introduce the return type
     | VOID
     | '_'
     ;
@@ -520,15 +507,15 @@ derivedTypeDeclaration
     ;
 
 headerTypeDeclaration
-    : optAnnotations HEADER name '{' structFieldList '}'
+    : optAnnotations HEADER name optTypeParameters '{' structFieldList '}'
     ;
 
 structTypeDeclaration
-    : optAnnotations STRUCT name '{' structFieldList '}'
+    : optAnnotations STRUCT name optTypeParameters '{' structFieldList '}'
     ;
 
 headerUnionDeclaration
-    : optAnnotations HEADER_UNION name '{' structFieldList '}'
+    : optAnnotations HEADER_UNION name optTypeParameters '{' structFieldList '}'
     ;
 
 structFieldList
@@ -541,8 +528,8 @@ structField
     ;
 
 enumDeclaration
-    : optAnnotations ENUM name '{' identifierList '}'
-    | optAnnotations ENUM BIT '<' INTEGER '>' name '{' specifiedIdentifierList '}'
+    : optAnnotations ENUM name '{' identifierList optTrailingComma '}'
+    | optAnnotations ENUM typeRef name '{' specifiedIdentifierList optTrailingComma '}'
     ;
 
 specifiedIdentifierList
@@ -559,7 +546,7 @@ errorDeclaration
     ;
 
 matchKindDeclaration
-    : MATCH_KIND '{' identifierList '}'
+    : MATCH_KIND '{' identifierList optTrailingComma '}'
     ;
 
 identifierList
@@ -571,11 +558,9 @@ typedefDeclaration
     : optAnnotations TYPEDEF typeRef name
     | optAnnotations TYPEDEF derivedTypeDeclaration name
     | optAnnotations TYPE typeRef name
-    | optAnnotations TYPE derivedTypeDeclaration name
     ;
 
 assignmentOrMethodCallStatement
-    // These rules are overly permissive, but they avoid some conflicts
     : lvalue '(' argumentList ')' ';'
     | lvalue '<' typeArgumentList '>' '(' argumentList ')' ';'
     | lvalue '=' expression ';'
@@ -595,17 +580,18 @@ returnStatement
     ;
 
 conditionalStatement
-    : IF '(' expression ')' statement 				//              %prec THEN
-    | IF '(' expression ')' statement ELSE statement // 			%prec THEN
+    : IF '(' expression ')' statement
+    | IF '(' expression ')' statement ELSE statement
     ;
 
 directApplication
     : typeName '.' APPLY '(' argumentList ')' ';'
+    | specializedType '.' APPLY '(' argumentList ')' ';'
     ;
 
 statement
-    : directApplication
-    | assignmentOrMethodCallStatement
+    : assignmentOrMethodCallStatement
+    | directApplication
     | conditionalStatement
     | emptyStatement
     | blockStatement
@@ -638,8 +624,8 @@ switchCase
     ;
 
 switchLabel
-    : name
-    | DEFAULT
+    : DEFAULT
+    | nonBraceExpression
     ;
 
 statementOrDeclaration
@@ -650,8 +636,7 @@ statementOrDeclaration
     ;
 
 tableDeclaration
-    : optAnnotations
-        TABLE name '{' tablePropertyList '}'
+    : optAnnotations TABLE name '{' tablePropertyList '}'
     ;
 
 tablePropertyList
@@ -677,25 +662,26 @@ keyElement
 
 actionList
     : /* empty */
-    | actionList actionRef ';'
+    | actionList optAnnotations actionRef ';'
     ;
 
 actionRef
-    : optAnnotations name 
-    | optAnnotations name '(' argumentList ')'
+    : prefixedNonTypeName
+    | prefixedNonTypeName '(' argumentList ')'
     ;
 
 entry
-    : keysetExpression ':' actionBinding optAnnotations ';'
+    : optCONST entryPriority keysetExpression ':' actionRef optAnnotations ';'
+    | optCONST keysetExpression ':' actionRef optAnnotations ';'
     ;
 
-actionBinding
-    : lvalue '(' argumentList ')'
-    | lvalue '<' typeArgumentList '>' '(' argumentList ')'
-	;
+entryPriority
+    : PRIORITY '=' INTEGER ':'
+    | PRIORITY '=' '(' expression ')' ':'
+    ;
 
 entriesList
-    : entry
+    : /* empty */
     | entriesList entry
     ;
 
@@ -722,7 +708,8 @@ initializer
     ;
 
 functionDeclaration
-    : functionPrototype blockStatement
+    : annotations functionPrototype blockStatement
+    | functionPrototype blockStatement
     ;
 
 argumentList
@@ -739,12 +726,22 @@ argument
     : expression
     | name '=' expression
     | '_'
+    | name '=' '_'
     ;
 
 expressionList
     : /* empty */
     | expression
     | expressionList ',' expression
+    ;
+
+structuredAnnotationBody
+    : expressionList optTrailingComma
+    | kvList optTrailingComma
+    ;
+
+member
+    : name
     ;
 
 prefixedNonTypeName
@@ -755,13 +752,15 @@ prefixedNonTypeName
 lvalue
     : prefixedNonTypeName
     | THIS
-    | lvalue '.' name
+    | lvalue '.' member
     | lvalue '[' expression ']'
     | lvalue '[' expression ':' expression ']'
+    | '(' lvalue ')'
     ;
 
 expression
     : INTEGER
+    | DOTS
     | STRING_LITERAL
     | TRUE
     | FALSE
@@ -770,15 +769,18 @@ expression
     | dotPrefix nonTypeName
     | expression '[' expression ']'
     | expression '[' expression ':' expression ']'
-    | '{' expressionList '}' 
-    | '(' expression ')' 
-    | '!' expression //%prec PREFIX
-    | '~' expression //%prec PREFIX
-    | '-' expression //%prec PREFIX
-    | '+' expression //%prec PREFIX
-    | typeName '.' name
-    | ERROR '.' name
-    | expression '.' name
+    | '{' expressionList optTrailingComma '}'
+    | INVALID_HEADER
+    | '{' kvList optTrailingComma '}'
+    | '{' kvList ',' DOTS optTrailingComma '}'
+    | '(' expression ')'
+    | '!' expression
+    | '~' expression
+    | '-' expression
+    | '+' expression
+    | typeName '.' member
+    | ERROR '.' member
+    | expression '.' member
     | expression '*' expression
     | expression '/' expression
     | expression '%' expression
@@ -802,159 +804,178 @@ expression
     | expression '||' expression
     | expression '?' expression ':' expression
     | expression '<' realTypeArgumentList '>' '(' argumentList ')'
-    // FIXME: the previous rule has the wrong precedence, and parses with
-    // precedence weaker than casts.  There is no easy way to fix this in bison.
     | expression '(' argumentList ')'
     | namedType '(' argumentList ')'
-	| '(' typeRef ')' expression // %prec PREFIX 
+    | '(' typeRef ')' expression
     ;
 
+nonBraceExpression
+    : INTEGER
+    | STRING_LITERAL
+    | TRUE
+    | FALSE
+    | THIS
+    | nonTypeName
+    | dotPrefix nonTypeName
+    | nonBraceExpression '[' expression ']'
+    | nonBraceExpression '[' expression ':' expression ']'
+    | '(' expression ')'
+    | '!' expression
+    | '~' expression
+    | '-' expression
+    | '+' expression
+    | typeName '.' member
+    | ERROR '.' member
+    | nonBraceExpression '.' member
+    | nonBraceExpression '*' expression
+    | nonBraceExpression '/' expression
+    | nonBraceExpression '%' expression
+    | nonBraceExpression '+' expression
+    | nonBraceExpression '-' expression
+    | nonBraceExpression '|+|' expression
+    | nonBraceExpression '|-|' expression
+    | nonBraceExpression '<<' expression
+    | nonBraceExpression '>' '>' expression
+    | nonBraceExpression '<=' expression
+    | nonBraceExpression '>=' expression
+    | nonBraceExpression '<' expression
+    | nonBraceExpression '>' expression
+    | nonBraceExpression '!=' expression
+    | nonBraceExpression '==' expression
+    | nonBraceExpression '&' expression
+    | nonBraceExpression '^' expression
+    | nonBraceExpression '|' expression
+    | nonBraceExpression '++' expression
+    | nonBraceExpression '&&' expression
+    | nonBraceExpression '||' expression
+    | nonBraceExpression '?' expression ':' expression
+    | nonBraceExpression '<' realTypeArgumentList '>' '(' argumentList ')'
+    | nonBraceExpression '(' argumentList ')'
+    | namedType '(' argumentList ')'
+    | '(' typeRef ')' expression
+    ;
 
-/* Added by Ali */
 type_or_id
-	: IDENTIFIER
-	| TYPE_IDENTIFIER
-;
+    : IDENTIFIER
+    ;
 
-parserStateCondition
-	: expression
-	| expression '==' keysetExpression
-	| expression '==' '(' keysetExpression ')'
-	| keysetExpression '==' expression
-	| '(' keysetExpression ')' '==' expression
-	;
+/* ***** */
+/* LEXER */
+/* ***** */
+PRAGMA          : '@pragma';
 
-/* ******* */
-/*  LEXER  */
-/* ******* */
-PRAGMA						: '@pragma';
+ABSTRACT        : 'abstract';
+ACTION          : 'action';
+ACTIONS         : 'actions';
+APPLY           : 'apply';
+BOOL            : 'bool';
+BIT             : 'bit';
+CONST           : 'const';
+CONTROL         : 'control';
+DEFAULT         : 'default';
+ELSE            : 'else';
+ENTRIES         : 'entries';
+ENUM            : 'enum';
+ERROR           : 'error';
+EXIT            : 'exit';
+EXTERN          : 'extern';
+FALSE           : 'false';
+HEADER          : 'header';
+HEADER_UNION    : 'header_union';
+IF              : 'if';
+IN              : 'in';
+INOUT           : 'inout';
+INT             : 'int';
+KEY             : 'key';
+LIST            : 'list';
+MATCH_KIND      : 'match_kind';
+TYPE            : 'type';
+OUT             : 'out';
+PARSER          : 'parser';
+PACKAGE         : 'package';
+PRIORITY        : 'priority';
+RETURN          : 'return';
+SELECT          : 'select';
+STATE           : 'state';
+STRING          : 'string';
+STRUCT          : 'struct';
+SWITCH          : 'switch';
+TABLE           : 'table';
+THIS            : 'this';
+TRANSITION      : 'transition';
+TRUE            : 'true';
+TUPLE           : 'tuple';
+TYPEDEF         : 'typedef';
+VARBIT          : 'varbit';
+VALUESET        : 'value_set';
+VOID            : 'void';
+DONTCARE        : '_';
 
-ABSTRACT					: 'abstract';
-ACTION						: 'action';
-ACTIONS						: 'actions';
-APPLY						: 'apply';
-BOOL						: 'bool';
-BIT							: 'bit';
-CONST						: 'const';
-CONTROL						: 'control';
-DEFAULT						: 'default';
-ELSE						: 'else';
-ENTRIES						: 'entries';
-ENUM						: 'enum';
-ERROR						: 'error';
-EXIT						: 'exit';
-EXTERN						: 'extern';
-FALSE						: 'false';
-HEADER						: 'header';
-HEADER_UNION				: 'header_union';
-IF							: 'if';
-IN							: 'in';
-INOUT						: 'inout';
-INT							: 'int';
-KEY							: 'key';
-MATCH_KIND					: 'match_kind';
-TYPE						: 'type';
-OUT							: 'out';
-PARSER						: 'parser';
-PACKAGE						: 'package';
-RETURN						: 'return';
-SELECT						: 'select';
-STATE						: 'state';
-MEGA_STATE					: 'mega_state';
-STRUCT						: 'struct';
-SWITCH						: 'switch';
-TABLE						: 'table';
-THIS						: 'this';
-TRANSITION					: 'transition';
-TRUE						: 'true';
-TUPLE						: 'tuple';
-TYPEDEF						: 'typedef';
-VARBIT						: 'varbit';
-VALUESET					: 'value_set';
-VOID						: 'void';
-DONTCARE					: '_';
+MASK            : '&&&';
+DOTS            : '...';
+RANGE           : '..';
+SHL             : '<<';
+AND             : '&&';
+OR              : '||';
+EQ              : '==';
+NE              : '!=';
+GE              : '>=';
+LE              : '<=';
+PP              : '++';
+PLUS            : '+';
+PLUS_SAT        : '|+|';
+MINUS           : '-';
+MINUS_SAT       : '|-|';
+MUL             : '*';
+DIV             : '/';
+MOD             : '%';
+BIT_OR          : '|';
+BIT_AND         : '&';
+BIT_XOR         : '^';
+COMPLEMENT      : '~';
+L_PAREN         : '(';
+R_PAREN         : ')';
+L_BRACKET       : '[';
+R_BRACKET       : ']';
+INVALID_HEADER  : '{#}';
+L_BRACE         : '{';
+R_BRACE         : '}';
+L_ANGLE         : '<';
+R_ANGLE         : '>';
+NOT             : '!';
+COLON           : ':';
+COMMA           : ',';
+QUESTION        : '?';
+DOT             : '.';
+ASSIGN          : '=';
+SEMICOLON       : ';';
+AT              : '@';
 
+WS              : [ \t\r\n]+ -> channel(HIDDEN);
+COMMENT         : '/*' .*? '*/' -> skip;
+LINE_COMMENT    : '//' ~[\r\n]* -> skip;
 
-MASK						: '&&&';
-RANGE						: '..';
-SHL							: '<<';
-AND							: '&&';
-OR							: '||';
-EQ							: '==';
-NE							: '!=';
-GE							: '>=';
-LE							: '<=';
-PP							: '++';
-PLUS						: '+';
-PLUS_SAT					: '|+|';
-MINUS						: '-';
-MINUS_SAT					: '|-|';
-MUL							: '*';
-DIV							: '/';
-MOD							: '%';
-BIT_OR						: '|';
-BIT_AND						: '&';
-BIT_XOR						: '^';
-COMPLEMENT					: '~';
-L_PAREN						: '(';
-R_PAREN						: ')';
-L_BRACKET					: '[';
-R_BRACKET					: ']';
-L_BRACE						: '{';
-R_BRACE						: '}';
-L_ANGLE						: '<';
-R_ANGLE						: '>';
-NOT							: '!';
-COLON						: ':';
-COMMA						: ',';
-QUESTION					: '?';
-DOT							: '.';
-ASSIGN						: '=';
-SEMICOLON					: ';';
-AT							: '@';
-UNEXPECTED_TOKEN			: '<*>.|\n';
+fragment ESCAPED_QUOTE : '\\"';
+STRING_LITERAL  : '"' ( ESCAPED_QUOTE | ~('\n' | '\r') )*? '"';
 
-// added by Ali
-WS 							: [ \t\r\n]+ -> channel(HIDDEN) ;
-COMMENT 					: '/*' .*? '*/' -> skip ;
-LINE_COMMENT 				: '//' ~[\r\n]* -> skip ;
-fragment ESCAPED_QUOTE 		: '\\"';
-STRING_LITERAL 				: '"' ( ESCAPED_QUOTE | ~('\n'|'\r') )*? '"';
+IDENTIFIER      : [A-Za-z_][A-Za-z0-9_]*;
 
-PREPROC_INCLUDE				: '#include';
-PREPROC_DEFINE				: '#define';
-PREPROC_UNDEF				: '#undef';
-PREPROC_IFDEF				: '#ifdef';
-PREPROC_IFNDEF				: '#ifndef';
-PREPROC_ELSEIF				: '#elseif';
-PREPROC_ENDIF				: '#endif';
-PREPROC_LINE				: '#line';
-PREPROC_IF					: '#if';
-PREPROC_ELSE				: '#else';
-PREPROC_ARG 				: '##'[A-Za-z_][A-Za-z0-9_]* -> channel(HIDDEN) ;
+INTEGER
+    : HEX_INTEGER
+    | DEC_INTEGER
+    | OCT_INTEGER
+    | BI_INTEGER
+    | HEX_INTEGER_WITH
+    | DEC_INTEGER_WITH
+    | OCT_INTEGER_WITH
+    | BI_INTEGER_WITH
+    ;
 
-// end of added by Ali
-
-IDENTIFIER					: [A-Za-z_][A-Za-z0-9_]*;
-TYPE_IDENTIFIER				: [A-Za-z_][A-Za-z0-9_]*;
-
-
-// Ali: we should change! Integer and Identifier!
-
-INTEGER						: HEX_INTEGER
-							| DEC_INTEGER
-							| OCT_INTEGER
-							| BI_INTEGER
-							| HEX_INTEGER_WITH
-							| DEC_INTEGER_WITH
-							| OCT_INTEGER_WITH
-							| BI_INTEGER_WITH ;
-
-fragment HEX_INTEGER 				: '0'[xX][0-9a-fA-F_]+ ;
-fragment DEC_INTEGER				: '0'[dD][0-9_]+ | [0-9][0-9_]* ;
-fragment OCT_INTEGER				: '0'[oO][0-7_]+ ;
-fragment BI_INTEGER 				: '0'[bB][01_]+ ;
-fragment HEX_INTEGER_WITH			: [0-9]+[ws]'0'[xX][0-9a-fA-F_]+ ;
-fragment DEC_INTEGER_WITH			: [0-9]+[ws]'0'[dD][0-9_]+ | [0-9]+[ws][0-9_]+;
-fragment OCT_INTEGER_WITH			: [0-9]+[ws]'0'[oO][0-7_]+ ;
-fragment BI_INTEGER_WITH 			: [0-9]+[ws]'0'[bB][01_]+ ;
+fragment HEX_INTEGER        : '0' [xX] [0-9a-fA-F_]+;
+fragment DEC_INTEGER        : '0' [dD] [0-9_]+ | [0-9] [0-9_]*;
+fragment OCT_INTEGER        : '0' [oO] [0-7_]+;
+fragment BI_INTEGER         : '0' [bB] [01_]+;
+fragment HEX_INTEGER_WITH   : [0-9]+ [ws] '0' [xX] [0-9a-fA-F_]+;
+fragment DEC_INTEGER_WITH   : [0-9]+ [ws] '0' [dD] [0-9_]+ | [0-9]+ [ws] [0-9_]+;
+fragment OCT_INTEGER_WITH   : [0-9]+ [ws] '0' [oO] [0-7_]+;
+fragment BI_INTEGER_WITH    : [0-9]+ [ws] '0' [bB] [01_]+;

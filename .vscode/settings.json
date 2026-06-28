@@ -1,7 +1,11 @@
 {
 	"editor.insertSpaces": false,
-	"tslint.enable": true,
 	"typescript.tsc.autoDetect": "off",
 	"typescript.preferences.quoteStyle": "single",
-	"search.useGlobalIgnoreFiles": true
+	"search.useGlobalIgnoreFiles": true,
+	"eslint.useFlatConfig": true,
+	"eslint.validate": [
+		"typescript",
+		"javascript"
+	]
 }

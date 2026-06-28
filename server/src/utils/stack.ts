@@ -14,11 +14,11 @@ export default class Stack<T> {
 		this.stack.push(value);
 	}
 
-	public pop(): T {
+	public pop(): T | undefined {
 		return this.stack.pop();
 	}
 
-	public peek(): T {
+	public peek(): T | undefined {
 		return this.stack[this.size - 1];
 	}
 

@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * P4 Language Server - entry point.
+ * Sets up the LSP connection, document manager, and feature providers.
  * ------------------------------------------------------------------------------------------ */
 
 'use strict';
@@ -9,139 +9,94 @@ import {
 	TextDocuments,
 	ProposedFeatures,
 	InitializeParams,
+	InitializeResult,
 	CompletionItem,
 	Connection,
+	TextDocumentSyncKind,
+	PublishDiagnosticsParams,
 	DidChangeConfigurationNotification,
-} from 'vscode-languageserver';
-import { sendToRemoteServer } from './remote_compiler_proxy' ;
+} from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+
 import { sendToAntlrCompiler } from './antlr_compiler_proxy';
-import { P4ExtensionSettings } from './p4_extension_setting';
-import { logDebug, logInfo } from './utils/logger';
-import { getDocumentSettings } from './utils';
+import { logInfo } from './utils/logger';
 import { completionProvider } from './providers/CompletionProvider';
 import { highlightProvider } from './providers/DocumentHighlightProvider';
 
-let connection = createConnection(ProposedFeatures.all);
-let hasConfigurationCapability: boolean = false;
-let hasWorkspaceFolderCapability: boolean = false;
-
-export let documentSettings: Map<string, Thenable<P4ExtensionSettings>> = new Map();
+const connection = createConnection(ProposedFeatures.all);
+let hasConfigurationCapability = false;
+let hasWorkspaceFolderCapability = false;
 
 class Server {
 	public connection: Connection;
-	public documents: TextDocuments;
+	public documents: TextDocuments<TextDocument>;
 
 	constructor(connection: Connection) {
 		this.connection = connection;
-		this.documents = new TextDocuments();
+		this.documents = new TextDocuments(TextDocument);
 
 		this.initializeConnection();
 		this.initializeDocuments();
 		this.registerProviders();
 
-		this.documents.listen(connection);
+		this.documents.listen(this.connection);
 		this.connection.listen();
 	}
 
-	initializeDocuments() {
-		this.documents.onDidChangeContent(async change => {
-			let mySetting = await getDocumentSettings(change.document.uri);
-			if(mySetting.useRemoteServer)
-				sendToRemoteServer(change.document);
-			sendToAntlrCompiler(change.document);
+	private initializeDocuments(): void {
+		this.documents.onDidChangeContent((change) => {
+			void sendToAntlrCompiler(change.document);
 		});
 
-		this.connection.onDidChangeWatchedFiles(_change => {
-			logDebug('We received an file change event');
-		});
-		
-		this.connection.onDidOpenTextDocument((params) => {
-			// A text document got opened in VSCode.
-			// params.uri uniquely identifies the document. For documents store on disk this is a file URI.
-			// params.text the initial full content of the document.
-			logInfo(`${params.textDocument.uri} opened.`);
-		});
-		this.connection.onDidChangeTextDocument((params) => {
-			// The content of a text document did change in VSCode.
-			// params.uri uniquely identifies the document.
-			// params.contentChanges describe the content changes to the document.
-			logInfo(`${params.textDocument.uri} changed: ${JSON.stringify(params.contentChanges)}`);
-		});
-		this.connection.onDidCloseTextDocument((params) => {
-			// A text document got closed in VSCode.
-			// params.uri uniquely identifies the document.
-			logInfo(`${params.textDocument.uri} closed.`);
+		// When a watched file (e.g. an included header) changes on disk, re-validate open docs.
+		this.connection.onDidChangeWatchedFiles(() => {
+			this.documents.all().forEach((doc) => void sendToAntlrCompiler(doc));
 		});
 	}
-	
-	private initializeConnection(){
-		this.connection.onInitialize((params: InitializeParams) => {
-			let capabilities = params.capabilities;
-			hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
-			hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
-		
+
+	private initializeConnection(): void {
+		this.connection.onInitialize((params: InitializeParams): InitializeResult => {
+			const capabilities = params.capabilities;
+			hasConfigurationCapability = !!capabilities.workspace?.configuration;
+			hasWorkspaceFolderCapability = !!capabilities.workspace?.workspaceFolders;
+
 			return {
 				capabilities: {
-					textDocumentSync: this.documents.syncKind,
+					textDocumentSync: TextDocumentSyncKind.Incremental,
 					completionProvider: {
 						resolveProvider: true,
-						triggerCharacters: ["<", ">", "."]
+						triggerCharacters: ['<', '>', '.'],
 					},
-					documentRangeFormattingProvider: true,
 					documentHighlightProvider: true,
-					foldingRangeProvider: true
-				}
+				},
 			};
 		});
 
 		this.connection.onInitialized(() => {
 			if (hasConfigurationCapability) {
-				// Register for all configuration changes.
-				connection.client.register(
-					DidChangeConfigurationNotification.type,
-					undefined
-				);
+				void this.connection.client.register(DidChangeConfigurationNotification.type, undefined);
 			}
 			if (hasWorkspaceFolderCapability) {
-				connection.workspace.onDidChangeWorkspaceFolders(_event => {
+				this.connection.workspace.onDidChangeWorkspaceFolders(() => {
 					logInfo('Workspace folder change event received.');
 				});
 			}
 		});
 
-		this.connection.onDidChangeConfiguration(async change => {
-			// let mySetting = await getDocument\Settings();
-		
-			this.documents.all().forEach(sendToRemoteServer);
-			this.documents.all().forEach(sendToAntlrCompiler);
+		this.connection.onDidChangeConfiguration(() => {
+			this.documents.all().forEach((doc) => void sendToAntlrCompiler(doc));
 		});
 	}
 
-	private registerProviders(){
-		// This handler provides the initial list of the completion items.
-		connection.onCompletion(completionProvider);
-		connection.onDocumentHighlight(highlightProvider);
-
-		// This handler resolve additional information for the item selected in
-		// the completion list.
-		connection.onCompletionResolve(
-			(item: CompletionItem): CompletionItem => {
-				if (item.data === 1) {
-					(item.detail = 'TypeScript details'),
-						(item.documentation = 'TypeScript documentation');
-				} else if (item.data === 2) {
-					(item.detail = 'JavaScript details'),
-						(item.documentation = 'JavaScript documentation');
-				}
-				return item;
-			}
-		);
-
+	private registerProviders(): void {
+		this.connection.onCompletion(completionProvider);
+		this.connection.onDocumentHighlight(highlightProvider);
+		this.connection.onCompletionResolve((item: CompletionItem): CompletionItem => item);
 	}
 
-	public sendDiagnostics(params): void {
+	public sendDiagnostics(params: PublishDiagnosticsParams): void {
 		this.connection.sendDiagnostics(params);
 	}
 }
 
-export let p4ExtensionServer = new Server(connection);
+export const p4ExtensionServer = new Server(connection);

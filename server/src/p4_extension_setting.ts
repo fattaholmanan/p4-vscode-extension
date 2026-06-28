@@ -1,22 +1,9 @@
-// The example settings
-export interface P4ExtensionSettings {
+export interface P4Settings {
 	maxNumberOfProblems: number;
-	compilerServerAddress: string;
-	usernamePassword?: UseramePassword;
-	autoUserNamePassword: boolean;
-	userRememberToken?: string;
-	useRemoteServer: boolean;
+	includePaths: string[];
 }
 
-interface UseramePassword {
-	username: string;
-	password: string;
-}
-
-
-export const defaultSettings: P4ExtensionSettings = { 
+export const defaultSettings: P4Settings = {
 	maxNumberOfProblems: 100,
-	compilerServerAddress: "",
-	autoUserNamePassword: false,
-	useRemoteServer: false
+	includePaths: [],
 };

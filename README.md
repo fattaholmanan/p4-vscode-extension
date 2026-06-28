@@ -1,30 +1,52 @@
 # P4 VSCode Extension
-This repo contains the Visual Studio P4_16 Extension. 
+
+Visual Studio Code language support for **P4_16**: syntax checking, syntax
+highlighting, scoped autocompletion, and table snippets.
 
 ## Features
-- Syntax checker,
-- Syntax Highlighting,
-- Autocompletion for headers and input parameters,
-- Support of remote compiler for showing an extended list of errors (with user
- authentication for access control),
-- Snippet for basic code structures, like tables.
 
-## Open source projects used in this extension
-- [Antlr (ANother Tool for Language Recognition)](https://www.antlr.org) is a
- powerful parser generator for reading, processing, executing or translating
- structured text or binary files. To this end, the referenced lex/yacc P4
- grammars
- (links to:
- [lexer](https://github.com/p4lang/p4c/blob/master/frontends/parsers/p4/p4lexer.ll)
- and
- [parser](https://github.com/p4lang/p4c/blob/master/frontends/parsers/p4/p4parser.ypp))
- have been transferred to Antlr4 syntax in [grammar](grammar) folder. 
+- C-style preprocessor (`#include`, `#define`, `#if` / `#ifdef` / `#ifndef`, …)
+- ANTLR-based syntax validation with diagnostics mapped back to original files
+- Autocompletion for variables, parameters, header/struct fields, and table members
+- Snippets for common constructs (e.g. tables)
 
-- [vscode-p4](https://bitbucket.org/shouxi/vscode-p4/src/master/) "the most basic
- syntax colorizer" and the same code is used in this project for syntax
- highlighting.
+Standard library headers from [p4lang/p4c](https://github.com/p4lang/p4c) live in
+[`p4include/`](p4include/) (`core.p4`, `v1model.p4`, …) and are searched
+automatically for `#include <core.p4>`-style directives.
+
+## Development
+
+Requirements: **Node.js 18+** (npm workspaces; no Java required locally).
+
+```bash
+npm install
+npm run build          # bundle client + server with esbuild
+npm run check-types    # TypeScript type-check
+npm run lint
+npm run test:unit      # preprocessor + parser tests
+npm run gen:parser     # regenerate server/src/parser/ from grammar/P4.g4
+```
+
+Press **F5** in VS Code to launch an Extension Development Host.
+
+### Settings
+
+| Setting | Description |
+|---------|-------------|
+| `p4.maxNumberOfProblems` | Max diagnostics per file (default: 100) |
+| `p4.includePaths` | Extra directories for `#include` resolution |
+| `p4.trace.server` | LSP trace verbosity |
+
+## Grammar
+
+The ANTLR grammar is in [`grammar/P4.g4`](grammar/P4.g4), aligned with the
+reference [`grammar/p4.y`](grammar/p4.y). See
+[`grammar/VERIFICATION.md`](grammar/VERIFICATION.md) for intentional deviations
+and the validation corpus.
+
+Parser generation uses [antlr-ng](https://github.com/mike-lischke/antlr-ng) with
+the [antlr4ng](https://github.com/mike-lischke/antlr4ng) runtime.
 
 ## License
-``` 
+
 Apache-2.0
- ```
